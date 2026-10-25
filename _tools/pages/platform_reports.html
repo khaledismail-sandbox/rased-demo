@@ -11,7 +11,7 @@
   </div>
 </main>
 <script>
-(function () {
+Rased.whenReady(function () {
   var p = Rased.persona(); if (!p) return;
   document.getElementById('sub').textContent = p.account + ' · Reports';
   var fmt = 'pdf';
@@ -22,6 +22,6 @@
     var ok = document.getElementById('ok'); ok.hidden = false; ok.textContent = 'Export queued — you will find it under My Exported Files.';
     RasedAnalytics.track('Report Exported', { module: 'operations', report_type: rt, format: fmt });
   });
-})();
+});
 </script>
 </body>

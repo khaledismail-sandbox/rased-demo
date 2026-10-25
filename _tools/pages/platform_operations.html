@@ -10,7 +10,7 @@
   </div>
 </main>
 <script>
-(function () {
+Rased.whenReady(function () {
   var p = Rased.persona(); if (!p) return;
   document.getElementById('sub').textContent = p.account + ' · Operations Management';
   RasedAnalytics.track('Module Opened', { module: 'operations' });
@@ -22,6 +22,6 @@
     var ok = document.getElementById('ok'); ok.hidden = false; ok.textContent = 'Work order created — ' + n + ' vehicle(s), ' + prio + ' priority.';
     RasedAnalytics.track('Work Order Created', { module: 'operations', priority: prio, vehicles_assigned: n });
   });
-})();
+});
 </script>
 </body>

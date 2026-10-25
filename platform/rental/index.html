@@ -7,10 +7,11 @@
 <link rel="icon" href="../../assets/img/logo.png">
 <link rel="stylesheet" href="../../assets/css/tokens.css">
 <link rel="stylesheet" href="../../assets/css/site.css">
-<!-- Analytics + Session Replay + Experiment (unified loader) -->
-<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.js"></script>
-<!-- Guides & Surveys -->
-<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.engagement.js"></script>
+<!-- Amplitude loads ONLY on the published host; anywhere else (localhost) the wrapper runs recorder-only.
+     Analytics + Session Replay + Experiment (unified loader), then Guides & Surveys. -->
+<script>if (location.hostname === 'khaledismail-sandbox.github.io') document.write(
+  '<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.js"><\/script>' +
+  '<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.engagement.js"><\/script>');</script>
 <script src="../../assets/js/analytics.js"></script>
 <script src="../../assets/js/app.js"></script>
 </head>
@@ -26,7 +27,7 @@
   </div>
 </main>
 <script>
-(function () {
+Rased.whenReady(function () {
   var p = Rased.persona(); if (!p) return;
   document.getElementById('sub').textContent = p.account + ' · Rental';
   RasedAnalytics.track('Module Opened', { module: 'rental' });
@@ -38,7 +39,7 @@
     var ok = document.getElementById('ok'); ok.hidden = false; ok.textContent = 'Contract created — ' + n + ' vehicle(s) for ' + days + ' days.';
     RasedAnalytics.track('Rental Contract Created', { module: 'rental', contract_days: days, vehicles_rented: n });
   });
-})();
+});
 </script>
 </body>
 </html>

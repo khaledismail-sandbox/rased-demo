@@ -26,7 +26,7 @@
   </div>
 </main>
 <script>
-(function () {
+Rased.whenReady(function () {
   var p = Rased.persona(); if (!p) return;
   document.querySelectorAll('[data-i]').forEach(function (e) { e.innerHTML = Rased.icon(e.getAttribute('data-i')); });
   document.getElementById('sub').textContent = p.account + ' · ' + p.region;
@@ -38,6 +38,6 @@
     return '<li><span class="plate">' + v.plate + '</span><span class="grow">' + v.model + '</span><span class="tag' + (i === 0 ? ' warn' : '') + '">' + (i < 2 ? 'Service due' : 'Idle 3h') + '</span></li>';
   }).join('');
   RasedAnalytics.track('Fleet Dashboard Viewed', { module: 'dashboard', vehicles_in_fleet: p.fleet, active_alerts: p.alerts });
-})();
+});
 </script>
 </body>

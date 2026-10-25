@@ -19,11 +19,16 @@
   var slot = document.getElementById('toggle-slot');
   slot.innerHTML = Rased.toggleHtml();
   Rased.bindToggle(slot);
+  var err = document.getElementById('err'), busy = false;
+  input.addEventListener('input', function () { err.hidden = true; });
+  // Any user in seeded-users.json may sign in; anything else shows "Unknown user" and sends nothing.
   document.getElementById('login-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    var uid = input.value.trim();
-    if (!RasedAnalytics.PERSONAS[uid]) { document.getElementById('err').hidden = false; return; }
-    RasedAnalytics.signIn(uid, '../platform/dashboard/');
+    if (busy) return;
+    busy = true;
+    RasedAnalytics.signIn(input.value.trim(), '../platform/dashboard/').then(function (ok) {
+      if (!ok) { err.hidden = false; busy = false; }
+    }, function () { err.hidden = false; busy = false; });
   });
 })();
 </script>

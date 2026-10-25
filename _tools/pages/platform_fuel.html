@@ -10,7 +10,7 @@
   </div>
 </main>
 <script>
-(function () {
+Rased.whenReady(function () {
   var p = Rased.persona(); if (!p) return;
   document.getElementById('sub').textContent = p.account + ' · Expense Management';
   RasedAnalytics.track('Module Opened', { module: 'expenses_fuel' });
@@ -22,6 +22,6 @@
     var ok = document.getElementById('ok'); ok.hidden = false; ok.textContent = 'Logged ' + Rased.sar(amt) + ' (' + ft + ').';
     RasedAnalytics.track('Fuel Expense Logged', { module: 'expenses_fuel', amount_sar: amt, fuel_type: ft });
   });
-})();
+});
 </script>
 </body>

@@ -1,4 +1,6 @@
-/* Rased demo — persona data, per-user state and the MyFleet-style app shell (login + platform pages). */
+/* Rased demo — account data, per-user state and the MyFleet-style app shell (login + platform pages).
+   Who the user is comes from seeded-users.json (via RasedAnalytics); what the UI shows and how the booking
+   behaves comes from the user's ACCOUNT. */
 (function () {
   'use strict';
   var html = document.documentElement;
@@ -14,10 +16,10 @@
     ac_service: { label: 'AC service', price: 780 }
   };
 
-  var DATA = {
-    'ramla_contracting-u001': {
-      account: 'Ramla Contracting', initials: 'RC', fleet: 300, alerts: 9, dueService: 27,
-      city: 'Dammam', region: 'Eastern Province', odometer: false,
+  // UI data per account (vehicles, workshops, KPI numbers). Name, fleet size, region and city come from the data file.
+  var ACCOUNT_UI = {
+    ramla_contracting: {
+      initials: 'RC', alerts: 9, dueService: 27,
       workshops: ['Al-Faisaliyah Fleet Centre, Dammam', 'Dammam 2nd Industrial City Workshop'],
       vehicles: [
         { id: 'RC-118', plate: '4821 ABD', model: 'Mercedes Actros tipper' },
@@ -28,9 +30,8 @@
         { id: 'RC-167', plate: '3472 LMR', model: 'Toyota Hilux pickup' }
       ]
     },
-    'wahat_logistics-u001': {
-      account: 'Wahat Logistics', initials: 'WL', fleet: 180, alerts: 3, dueService: 8,
-      city: 'Riyadh', region: 'Riyadh', odometer: true,
+    wahat_logistics: {
+      initials: 'WL', alerts: 3, dueService: 8,
       workshops: ['Al-Sulay Fleet Centre, Riyadh', 'Riyadh 2nd Industrial City Workshop'],
       vehicles: [
         { id: 'WL-204', plate: '6120 RYD', model: 'Isuzu NQR box van' },
@@ -42,7 +43,7 @@
       ]
     }
   };
-  var DEFAULT_CHOICE = 'ramla_contracting-u001';
+  var CHOICES = ['ramla_contracting-u001', 'wahat_logistics-u001'];
 
   function ls(k, v) {
     try {
@@ -62,8 +63,22 @@
   }
   function setOwned(key, obj) { obj.owner = A.persona(); ls(key, JSON.stringify(obj)); }
 
-  function persona() { var uid = A && A.persona(); return uid ? DATA[uid] : null; }
-  function choice() { var c = ls('rased_persona_choice'); return DATA[c] ? c : DEFAULT_CHOICE; }
+  // The signed-in user's view: identity from the data file, UI and behaviour from the account.
+  // dropper account -> no odometer feed (booking always fails); converter account -> live odometer (booking succeeds).
+  function persona() {
+    var prof = A && A.profile && A.profile(), ui = prof && ACCOUNT_UI[prof.account.slug];
+    if (!prof || !ui) return null;
+    return { userId: prof.userId, accountSlug: prof.account.slug, account: prof.account.props.account_name,
+      fleet: prof.account.props.fleet_size, region: prof.region, city: prof.city, behaviour: prof.behaviour,
+      odometer: prof.behaviour === 'converter', initials: ui.initials, alerts: ui.alerts, dueService: ui.dueService,
+      workshops: ui.workshops, vehicles: ui.vehicles };
+  }
+  // Run page code once the signed-in user's profile is known (never runs without one).
+  function whenReady(fn) {
+    if (!A || !A.ready) return;
+    A.ready.then(function () { if (persona()) fn(); }).catch(function (e) { console.error('[RasedAnalytics] page script failed', e); });
+  }
+  function choice() { var c = ls('rased_persona_choice'); return CHOICES.indexOf(c) !== -1 ? c : CHOICES[0]; }
   function sar(n) { return 'SAR ' + Number(n).toLocaleString('en-US'); }
 
   var I = {
@@ -96,12 +111,15 @@
     return '<span class="ptoggle"><button type="button" data-p="ramla_contracting-u001" title="dropper"' + (c === 'ramla_contracting-u001' ? ' class="on"' : '') + '>d</button>' +
       '<button type="button" data-p="wahat_logistics-u001" title="converter"' + (c === 'wahat_logistics-u001' ? ' class="on"' : '') + '>c</button></span>';
   }
+  // The tiny d/c toggle only switches the prefilled sign-in ID; it never signs anyone out.
   function bindToggle(scope) {
     scope.querySelectorAll('.ptoggle button').forEach(function (b) {
       b.addEventListener('click', function () {
-        ls('rased_persona_choice', b.getAttribute('data-p'));
-        clearUserState();
-        location.href = ROOT + 'login/';
+        var id = b.getAttribute('data-p');
+        ls('rased_persona_choice', id);
+        scope.querySelectorAll('.ptoggle button').forEach(function (x) { x.classList.toggle('on', x === b); });
+        var input = document.getElementById('uid');
+        if (input) { input.value = id; var err = document.getElementById('err'); if (err) err.hidden = true; }
       });
     });
   }
@@ -121,7 +139,7 @@
       '<aside class="side"><div class="rail"><span>' + icon('gear') + '</span><span class="on">' + icon('dash') + '</span></div>' +
       '<div class="drawer"><a class="brand" href="' + ROOT + 'platform/dashboard/"><img src="' + ROOT + 'assets/img/logo.png" alt="Rased"></a>' +
       '<nav>' + nav + '</nav>' +
-      '<div class="who">' + p.account + ' · ' + A.persona() + '<br><a href="#" id="signout">Sign out</a></div></div></aside>' +
+      '<div class="who">' + p.account + ' · ' + p.userId + '<br><a href="#" id="signout">Sign out</a></div></div></aside>' +
       '<div class="main"><header class="topbar"><span class="burger"></span><h1>' + main.getAttribute('data-title') + '</h1><span class="sp"></span>' +
       '<span class="lang-pill" style="font-size:13px;padding:5px 14px">العربية</span>' +
       '<span class="acct"><i>' + p.initials + '</i>' + p.account + '</span></header></div>';
@@ -140,13 +158,14 @@
   }
 
   window.Rased = {
-    ROOT: ROOT, SERVICES: SERVICES, DATA: DATA, persona: persona, choice: choice, sar: sar, icon: icon,
-    getOwned: getOwned, setOwned: setOwned, clear: function (k) { ls(k, null); },
+    ROOT: ROOT, SERVICES: SERVICES, ACCOUNT_UI: ACCOUNT_UI, persona: persona, choice: choice, sar: sar, icon: icon,
+    getOwned: getOwned, setOwned: setOwned, clear: function (k) { ls(k, null); }, whenReady: whenReady,
     toggleHtml: toggleHtml, bindToggle: bindToggle, clearUserState: clearUserState,
     hex8: function () { var a = new Uint8Array(4); crypto.getRandomValues(a); return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('').toUpperCase(); }
   };
 
   if (html.getAttribute('data-page') === 'platform') {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', shell); else shell();
+    var start = function () { whenReady(shell); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
   }
 })();

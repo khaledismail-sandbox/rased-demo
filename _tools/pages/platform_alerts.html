@@ -7,7 +7,7 @@
   </div>
 </main>
 <script>
-(function () {
+Rased.whenReady(function () {
   var p = Rased.persona(); if (!p) return;
   document.getElementById('sub').textContent = p.account + ' · ' + p.alerts + ' active';
   var types = { speeding: 'Speeding', geofence: 'Geofence exit', idle: 'Excessive idling', maintenance_due: 'Maintenance due' };
@@ -23,6 +23,6 @@
       RasedAnalytics.track('Alert Opened', { module: 'tracking', alert_type: r[0] });
     });
   });
-})();
+});
 </script>
 </body>

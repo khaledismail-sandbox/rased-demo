@@ -7,10 +7,11 @@
 <link rel="icon" href="../../assets/img/logo.png">
 <link rel="stylesheet" href="../../assets/css/tokens.css">
 <link rel="stylesheet" href="../../assets/css/site.css">
-<!-- Analytics + Session Replay + Experiment (unified loader) -->
-<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.js"></script>
-<!-- Guides & Surveys -->
-<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.engagement.js"></script>
+<!-- Amplitude loads ONLY on the published host; anywhere else (localhost) the wrapper runs recorder-only.
+     Analytics + Session Replay + Experiment (unified loader), then Guides & Surveys. -->
+<script>if (location.hostname === 'khaledismail-sandbox.github.io') document.write(
+  '<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.js"><\/script>' +
+  '<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.engagement.js"><\/script>');</script>
 <script src="../../assets/js/analytics.js"></script>
 <script src="../../assets/js/app.js"></script>
 </head>
@@ -42,7 +43,7 @@
   </div>
 </main>
 <script>
-(function () {
+Rased.whenReady(function () {
   var p = Rased.persona(); if (!p) return;
   document.querySelectorAll('[data-i]').forEach(function (e) { e.innerHTML = Rased.icon(e.getAttribute('data-i')); });
   document.getElementById('sub').textContent = p.account + ' · ' + p.region;
@@ -54,7 +55,7 @@
     return '<li><span class="plate">' + v.plate + '</span><span class="grow">' + v.model + '</span><span class="tag' + (i === 0 ? ' warn' : '') + '">' + (i < 2 ? 'Service due' : 'Idle 3h') + '</span></li>';
   }).join('');
   RasedAnalytics.track('Fleet Dashboard Viewed', { module: 'dashboard', vehicles_in_fleet: p.fleet, active_alerts: p.alerts });
-})();
+});
 </script>
 </body>
 </html>

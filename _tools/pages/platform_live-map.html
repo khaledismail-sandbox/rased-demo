@@ -25,7 +25,7 @@
   </div>
 </main>
 <script>
-(function () {
+Rased.whenReady(function () {
   var p = Rased.persona(); if (!p) return;
   var A = RasedAnalytics;
   document.getElementById('sub').textContent = p.account + ' · Tracking';
@@ -57,6 +57,6 @@
     document.getElementById('res').textContent = n + ' result' + (n === 1 ? '' : 's') + ' for "' + q + '"';
     A.track('Vehicle Searched', { module: 'tracking', search_type: t, results_count: n });
   });
-})();
+});
 </script>
 </body>

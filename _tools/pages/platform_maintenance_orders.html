@@ -8,7 +8,7 @@
   </div>
 </main>
 <script>
-(function () {
+Rased.whenReady(function () {
   var p = Rased.persona(); if (!p) return;
   var S = Rased.SERVICES;
   document.querySelectorAll('[data-i]').forEach(function (e) { e.innerHTML = Rased.icon(e.getAttribute('data-i')); });
@@ -29,6 +29,6 @@
     return '<tr><td><b>#' + o.order_id + '</b></td><td>' + S[o.service_type].label + '</td><td>' + o.n + '</td><td>' + p.workshops[0] + '</td><td>' + o.date + '</td><td>' +
       Rased.sar(S[o.service_type].price * o.n) + '</td><td><span class="tag' + (o.status === 'Paid' ? ' warn' : '') + '">' + o.status + '</span></td></tr>';
   }).join('');
-})();
+});
 </script>
 </body>

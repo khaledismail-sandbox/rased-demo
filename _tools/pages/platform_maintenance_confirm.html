@@ -23,7 +23,7 @@
   </div>
 </main>
 <script>
-(function () {
+Rased.whenReady(function () {
   var p = Rased.persona(); if (!p) return;
   var d = Rased.getOwned('rased_draft');
   document.getElementById('sub').textContent = p.account;
@@ -60,6 +60,6 @@
       '../orders/',
       { revenue: price * qty, price: price, quantity: qty, revenueType: 'maintenance_order' });
   });
-})();
+});
 </script>
 </body>

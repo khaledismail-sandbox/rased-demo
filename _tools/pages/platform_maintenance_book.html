@@ -41,7 +41,7 @@
   </div>
 </main>
 <script>
-(function () {
+Rased.whenReady(function () {
   var p = Rased.persona(); if (!p) return;
   var A = RasedAnalytics, S = Rased.SERVICES;
   Rased.clear('rased_draft');   // every visit starts a fresh request for the active persona
@@ -128,6 +128,6 @@
     abandonSent = true;
     A.track('Service Request Abandoned', abandonProps());
   });
-})();
+});
 </script>
 </body>

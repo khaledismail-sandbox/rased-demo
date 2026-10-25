@@ -1,7 +1,13 @@
 # Rased (by Elm) — Amplitude demo site
 
 **What this is:** a look-alike of Rased, Elm's fleet-management service: the rased.sa marketing page plus a signed-in Rased platform.
-Two maintenance coordinators book a workshop service. Ramla Contracting's booking always fails, while Wahat Logistics books and pays. Everything is sent to Amplitude project **888338**.
+Maintenance coordinators book a workshop service. Every **Ramla Contracting** user's booking fails, while every **Wahat Logistics** user books and pays. Events go to Amplitude project **888338**, but only from the published site (see Local testing below).
+
+**Who can sign in:** any user in `assets/data/seeded-users.json`, which holds the profiles already stored in Amplitude.
+- `ramla_contracting-u001` … `ramla_contracting-u032`: the dropper account
+- `wahat_logistics-u001` … `wahat_logistics-u020`: the converter account
+
+The account decides the behaviour, not the user number. Each user ID keeps its own device ID in this browser.
 
 Site: `https://khaledismail-sandbox.github.io/rased-demo/`
 
@@ -10,7 +16,7 @@ Site: `https://khaledismail-sandbox.github.io/rased-demo/`
 ## 1. Demo script — Dropper (Ramla Contracting, the default)
 
 1. Open the site. *(Optional)* Click **Contact Us** → pick a fleet size → **Submit** → Thank you page.
-2. Go to `/login/` (add `login/` to the site URL). The User ID is already filled in: `ramla_contracting-u001`. Click **Sign in**.
+2. Go to `/login/` (add `login/` to the site URL). The User ID is already filled in: `ramla_contracting-u001`. You can type any other Ramla user (for example `ramla_contracting-u007`). Click **Sign in**.
 3. **Dashboard** → in the left menu click **Maintenance Management**.
 4. Click **Book a workshop**.
 5. Tick **Select all vehicles** (all 6 show "No odometer feed") → choose a **Service type** → **Start request**.
@@ -27,14 +33,14 @@ Site: `https://khaledismail-sandbox.github.io/rased-demo/`
 
 ## 2. Demo script — Converter (Wahat Logistics)
 
-1. At the very bottom of the login page (or any platform page) are two tiny letters, **d** and **c**. Click **c**.
-   You are taken back to Sign in with `wahat_logistics-u001` filled in.
+1. Click **Sign out** (bottom of the left menu). On the login page, click the tiny **c** at the very bottom.
+   It only changes the filled-in ID to `wahat_logistics-u001`. Type any other Wahat user if you like.
 2. **Sign in** → **Maintenance Management** → **Book a workshop**.
 3. Pick vehicles (they show "Live odometer") → service → **Start request** → city (Riyadh), date, slot → **Submit booking**.
 4. **Booking Confirmation** → choose a payment method → **Pay**.
 5. **Maintenance Orders** shows the new paid order at the top.
 
-To switch back to Ramla, click the tiny **d**.
+To switch back: **Sign out**, then click the tiny **d** (or type any Ramla user ID).
 
 ## 3. Show the fix
 
@@ -42,23 +48,29 @@ Add `platform/maintenance/book-improved/` to the site URL. Nothing links to this
 It is the same 6 fields split into 3 short steps. Vehicles, city and date are already filled in, there is an "N items to go" counter, and each vehicle without a feed gets its own odometer box (or click **Use last recorded readings**). It ends with **Booking confirmed**.
 This page sends nothing to Amplitude.
 
-## 4. Verification (browser console)
+## 4. Local testing never sends data
+
+When the site runs anywhere other than `khaledismail-sandbox.github.io` (for example on `localhost`), the Amplitude scripts are not loaded and nothing is sent.
+Every event that *would* be sent is written to the recorder instead, and the footer shows **LOCAL TEST — not sending**.
+Each recorder row shows the user ID and device ID the event would be sent with.
+
+## 5. Verification (browser console)
 
 ```
-localStorage.rased_rec = '1'      // turn the recorder on, then reload and run the script
+localStorage.rased_rec = '1'      // live site: turn the recorder on, then reload and run the script (always on locally)
 RasedAnalytics.recDump()          // table of every identify/track, in call order
 RasedAnalytics.recClear()         // empty the log
 RasedAnalytics.sdkCheck()         // SDK, Session Replay, Guides & Surveys, Experiment, user/device/account
 ```
 Rows marked `queued` were held back until the identify, setGroup and groupIdentify calls (logged as a `flush` row) had been sent.
 
-## 5. Publishing on the GitHub website (no terminal)
+## 6. Publishing on the GitHub website (no terminal)
 
 Repo: `khaledismail-sandbox/rased-demo`
 
 1. In Finder, open `Desktop/rased-demo` and press **Cmd + Shift + .** to show hidden files, so `.nojekyll` is visible.
 2. On github.com open the repo → **Add file → Upload files**.
-3. Drag in the **contents** of `Desktop/rased-demo/`: `.nojekyll`, `index.html`, `README.md`, and the folders `assets`, `demo-request`, `login`, `platform`.
+3. Drag in the **contents** of `Desktop/rased-demo/`: `.nojekyll`, `index.html`, `README.md`, and the folders `assets` (including `assets/data`), `demo-request`, `login`, `platform`.
    **Skip `_reference/` and `_tools/`.** The website uploader ignores `.gitignore`, so anything you drag in gets published.
    If the uploader refuses (limit of 100 files per upload), upload one folder at a time.
 4. Commit directly to `main`.

@@ -11,10 +11,11 @@ cat <<H
 <link rel="icon" href="${R}assets/img/logo.png">
 <link rel="stylesheet" href="${R}assets/css/tokens.css">
 <link rel="stylesheet" href="${R}assets/css/site.css">
-<!-- Analytics + Session Replay + Experiment (unified loader) -->
-<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.js"></script>
-<!-- Guides & Surveys -->
-<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.engagement.js"></script>
+<!-- Amplitude loads ONLY on the published host; anywhere else (localhost) the wrapper runs recorder-only.
+     Analytics + Session Replay + Experiment (unified loader), then Guides & Surveys. -->
+<script>if (location.hostname === 'khaledismail-sandbox.github.io') document.write(
+  '<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.js"><\/script>' +
+  '<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.engagement.js"><\/script>');</script>
 <script src="${R}assets/js/analytics.js"></script>
 H
 for s in "$@"; do echo "<script src=\"${R}assets/js/$s\"></script>"; done
