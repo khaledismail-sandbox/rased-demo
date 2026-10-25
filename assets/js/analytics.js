@@ -42,7 +42,10 @@
   var html = document.documentElement;
   var PAGE = html.getAttribute('data-page');            // marketing | login | platform
   var ROOT = html.getAttribute('data-root') || './';     // relative path to the site root
-  var amp = window.amplitude;
+  var amp = window.amplitude;      // loader stub at first; the real SDK is merged into the same object when it loads
+  var SDK_WAIT_MS = 5000;
+
+  function warn(msg, err) { try { console.error('[RasedAnalytics] ' + msg, err || ''); } catch (e) {} }
 
   function ls(k, v) {
     try {
@@ -80,15 +83,21 @@
   function merge(a, b) { var o = {}, k; for (k in a) o[k] = a[k]; for (k in (b || {})) o[k] = b[k]; return o; }
 
   // ---- state ----
-  var active = false;      // SDK initialised and allowed to send
+  var active = false;      // this page is meant to send events
   var ready = false;       // identity sent; queue may flush
   var queue = [];
   var hideHooks = [];
-  var status = { initialised: false, srAdded: false, engagementAdded: false, account: null };
+  var status = { initialised: false, sdkLoaded: false, srAdded: false, engagementAdded: false, account: null };
+  var readyResolve;
+  var readyP = new Promise(function (r) { readyResolve = r; });   // true once identity is sent, false if the SDK never loaded
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
   function send(name, props, opts) {
-    var r = amp.track(name, props, opts);
-    return (r && r.promise) ? r.promise : Promise.resolve();
+    try {
+      var r = amp.track(name, props, opts);
+      return (r && r.promise) ? r.promise : Promise.resolve();
+    } catch (e) { warn('track failed: ' + name, e); return Promise.resolve(); }
   }
 
   function track(name, props, options) {
@@ -99,16 +108,31 @@
     return new Promise(function (res) { queue.push(function () { send(name, props, opts).then(res, res); }); });
   }
 
+  // Track, then navigate once it is sent (max 800 ms after sending). If identity is still pending we wait for it
+  // first (bounded by the SDK wait), so the event is never stranded in the page's queue by the navigation.
   function trackThenGo(name, props, href, options) {
     var done = false;
     function go() { if (!done) { done = true; location.href = href; } }
-    Promise.race([track(name, props, options), new Promise(function (r) { setTimeout(r, 800); })]).then(go, go);
+    var sent = track(name, props, options);
+    readyP.then(function (ok) {
+      if (!ok) return go();
+      Promise.race([sent, sleep(800)]).then(go, go);
+    });
+    setTimeout(go, SDK_WAIT_MS + 1500);   // hard cap: navigation always happens
   }
 
-  function flush() { rec('flush', 'identity sent; releasing ' + queue.length + ' queued track(s)'); ready = true; var q = queue; queue = []; q.forEach(function (fn) { fn(); }); }
+  function flush() {
+    var optedOut = null;
+    try { optedOut = amp.getOptOut ? amp.getOptOut() : null; } catch (e) {}
+    rec('flush', 'identity sent; releasing ' + queue.length + ' queued track(s)', { sdk_opt_out: optedOut });
+    if (optedOut) warn('SDK is opted out on a page that should send events');
+    ready = true; var q = queue; queue = []; q.forEach(function (fn) { fn(); });
+    readyResolve(true);
+  }
 
   // ---- identity ----
   function personaIdentity() {
+    try {
     var id = new amp.Identify(), k;
     for (k in P.set) id.set(k, P.set[k]);
     for (k in P.setOnce) id.setOnce(k, P.setOnce[k]);
@@ -122,9 +146,11 @@
     rec('identify', '$groupidentify', { group_type: 'account', group_name: P.account.slug, $set: P.account.props }, opts);
     amp.groupIdentify('account', P.account.slug, g, opts);
     status.account = P.account.slug;
+    } catch (e) { warn('persona identify failed', e); }
   }
 
   function anonymousIdentity() {
+    try {
     var q = new URLSearchParams(location.search);
     var src = q.get('utm_source'), med = q.get('utm_medium'), cmp = q.get('utm_campaign');
     var anyUtm = src || med || cmp;
@@ -150,6 +176,7 @@
     var opts = { country: COUNTRY };
     rec('identify', '$identify', { $set: set, $setOnce: once }, opts);
     amp.identify(id, opts);
+    } catch (e) { warn('anonymous identify failed', e); }
   }
 
   function pageViewed() {
@@ -162,96 +189,143 @@
     });
   }
 
-  // ---- init (always at load, so the loader never auto-inits) ----
+  // ---- SDK readiness: the loader stub must be replaced by the real SDK before identify/track ----
+  function sdkLoaded() {
+    var a = window.amplitude;
+    return !!(a && a.Identify && typeof a.runQueuedFunctions === 'function');
+  }
+  function waitForSdk() {
+    return new Promise(function (res) {
+      if (sdkLoaded()) return res(true);
+      var t0 = Date.now();
+      var iv = setInterval(function () {
+        if (sdkLoaded()) { clearInterval(iv); res(true); }
+        else if (Date.now() - t0 >= SDK_WAIT_MS) { clearInterval(iv); res(false); }
+      }, 50);
+    });
+  }
+
+  // init is queued on the loader stub immediately (so the loader never auto-inits), then we wait for the real SDK.
+  // optOut is ALWAYS passed explicitly: the SDK otherwise inherits the opt-out saved in its cookie by the login page.
   function init(uid, optOut) {
-    if (!amp) return Promise.resolve();
-    if (window.sessionReplay) {
-      amp.add(window.sessionReplay.plugin({ sampleRate: 1, privacyConfig: { defaultMaskLevel: MASK_LEVEL } }));
-      status.srAdded = true;
+    function doInit() {
+      amp = window.amplitude;
+      if (window.sessionReplay) {
+        amp.add(window.sessionReplay.plugin({ sampleRate: 1, privacyConfig: { defaultMaskLevel: MASK_LEVEL } }));
+        status.srAdded = true;
+      }
+      if (window.engagement) { amp.add(window.engagement.plugin()); status.engagementAdded = true; }
+      // SDK-generated events (Rage/Dead Click, Guides & Surveys) get the same location as wrapper events.
+      amp.add({ name: 'rased-location', type: 'enrichment', setup: function () { return Promise.resolve(); },
+        execute: function (e) {
+          var o = baseOptions();
+          for (var k in o) if (!e[k]) e[k] = o[k];
+          return Promise.resolve(e);
+        } });
+      var opts = {
+        fetchRemoteConfig: true,
+        optOut: !!optOut,
+        autocapture: { attribution: false, pageViews: false, sessions: false, formInteractions: false,
+          fileDownloads: false, elementInteractions: false, frustrationInteractions: true }
+      };
+      if (uid) opts.deviceId = deviceIdFor(uid);
+      var r = amp.init(KEY, uid || undefined, opts);
+      // On the loader stub, init's promise resolves with the real SDK's {promise} when the call is replayed — wait for that too.
+      var p = (r && r.promise) ? r.promise : Promise.resolve();
+      return p.then(function (v) { return (v && v.promise) ? v.promise : v; });
     }
-    if (window.engagement) { amp.add(window.engagement.plugin()); status.engagementAdded = true; }
-    // SDK-generated events (Rage/Dead Click, Guides & Surveys) get the same location as wrapper events.
-    amp.add({ name: 'rased-location', type: 'enrichment', setup: function () { return Promise.resolve(); },
-      execute: function (e) {
-        var o = baseOptions();
-        for (var k in o) if (!e[k]) e[k] = o[k];
-        return Promise.resolve(e);
-      } });
-    var opts = {
-      fetchRemoteConfig: true,
-      autocapture: { attribution: false, pageViews: false, sessions: false, formInteractions: false,
-        fileDownloads: false, elementInteractions: false, frustrationInteractions: true }
-    };
-    if (uid) opts.deviceId = deviceIdFor(uid);
-    if (optOut) opts.optOut = true;
-    var r = amp.init(KEY, uid || undefined, opts);
-    var p = (r && r.promise) ? r.promise : Promise.resolve();
-    return p.then(function () { status.initialised = true; }, function () { status.initialised = true; });
+    var initP = null;
+    try { if (window.amplitude) initP = doInit(); } catch (e) { warn('init failed', e); }
+    return waitForSdk().then(function (ok) {
+      status.sdkLoaded = ok;
+      if (!ok) { warn('Amplitude SDK not loaded after ' + SDK_WAIT_MS + ' ms (blocked or offline) — no events will be sent on this page'); return false; }
+      try { if (!initP) initP = doInit(); } catch (e) { warn('init failed', e); return false; }
+      var settled = false;
+      return Promise.race([initP.then(function () { settled = true; return true; }, function (e) { settled = true; warn('init rejected', e); return true; }),
+        sleep(SDK_WAIT_MS).then(function () { if (!settled) warn('init did not settle after ' + SDK_WAIT_MS + ' ms'); return true; })]);
+    }).then(function (ok) {
+      status.initialised = ok;
+      if (!ok) readyResolve(false);
+      return ok;
+    }, function (e) { warn('startup failed', e); readyResolve(false); return false; });
   }
 
   function loginPath() { return ROOT + 'login/'; }
 
-  if (PAGE === 'platform' && !P) {
-    // No persona: never send anything, just go to sign-in.
-    init(null, true);
-    location.replace(loginPath());
-  } else if (PAGE === 'login') {
-    init(null, true);          // opted out until a valid persona signs in
-  } else if (PAGE === 'platform' || (PAGE === 'marketing' && P)) {
-    active = true;
-    pageViewed();
-    init(userId, false).then(function () { personaIdentity(); flush(); });
-  } else if (PAGE === 'marketing') {
-    active = true;
-    pageViewed();
-    init(null, false).then(function () { anonymousIdentity(); flush(); });
-  }
+  var sdkP;
+  try {
+    if (PAGE === 'platform' && !P) {
+      // No persona: never send anything, just go to sign-in.
+      init(null, true);
+      location.replace(loginPath());
+    } else if (PAGE === 'login') {
+      sdkP = init(null, true);          // opted out until a valid persona signs in
+    } else if (PAGE === 'platform' || (PAGE === 'marketing' && P)) {
+      active = true;
+      pageViewed();
+      init(userId, false).then(function (ok) { if (ok) { personaIdentity(); flush(); } });
+    } else if (PAGE === 'marketing') {
+      active = true;
+      pageViewed();
+      init(null, false).then(function (ok) { if (ok) { anonymousIdentity(); flush(); } });
+    }
+  } catch (e) { warn('startup failed', e); readyResolve(false); }
 
-  // Sign in (login page only): enable the SDK under the persona, identify, then page view + login.
+  // Sign in (login page only): store the persona, enable the SDK under it, identify, then page view + login.
   function signIn(uid, href) {
     if (!PERSONAS[uid]) return false;
     ls('rased_persona', uid);
     userId = uid; P = PERSONAS[uid];
-    amp.setOptOut(false);
-    amp.setDeviceId(deviceIdFor(uid));
-    amp.setUserId(uid);
-    amp.setSessionId(Date.now());
     active = true;
-    personaIdentity();
-    flush();
     pageViewed();
     trackThenGo('User Logged In', { login_method: 'password', is_first_login: false }, href);
+    (sdkP || Promise.resolve(false)).then(function (ok) {
+      if (!ok) return;
+      try {
+        amp.setOptOut(false);
+        amp.setDeviceId(deviceIdFor(uid));
+        amp.setUserId(uid);
+        amp.setSessionId(Date.now());
+      } catch (e) { warn('sign-in identity setup failed', e); }
+      personaIdentity();
+      flush();
+    });
     return true;
   }
 
   // ---- pagehide: page hooks (e.g. abandonment) then Session Ended, all via beacon ----
   window.addEventListener('pagehide', function () {
-    if (!active || !amp) return;
+    if (!active || !ready || !amp) return;
     try { amp.setTransport('beacon'); } catch (e) {}
     hideHooks.forEach(function (fn) { try { fn(); } catch (e) {} });
     var opts = baseOptions();
     rec('track', 'Session Ended', {}, opts);
-    if (ready) amp.track('Session Ended', {}, opts);
+    send('Session Ended', {}, opts);
     try { amp.flush(); } catch (e) {}
   });
 
   function sdkCheck() {
     var exp = {};
     ['Experiment', 'webExperiment', 'WebExperiment'].forEach(function (n) { exp[n] = typeof window[n]; });
-    var out = {
-      amplitude_present: !!amp,
-      amplitude_initialised: status.initialised,
-      sending_enabled: active,
-      Identify_present: !!(amp && amp.Identify),
-      session_replay_plugin_added: status.srAdded,
-      session_replay_mask_level_in_code: MASK_LEVEL,
-      engagement_plugin_added: status.engagementAdded,
-      experiment_globals: exp,
-      user_id: amp && amp.getUserId ? amp.getUserId() : null,
-      device_id: amp && amp.getDeviceId ? amp.getDeviceId() : null,
-      account_group: status.account
-    };
-    console.table(out);
+    var out = {};
+    try {
+      out = {
+        amplitude_present: !!window.amplitude,
+        sdk_loaded: status.sdkLoaded,
+        amplitude_initialised: status.initialised,
+        sending_enabled: active && ready,
+        sdk_opt_out: amp && amp.getOptOut ? amp.getOptOut() : null,
+        Identify_present: !!(amp && amp.Identify),
+        session_replay_plugin_added: status.srAdded,
+        session_replay_mask_level_in_code: MASK_LEVEL,
+        engagement_plugin_added: status.engagementAdded,
+        experiment_globals: exp,
+        user_id: amp && amp.getUserId ? amp.getUserId() : null,
+        device_id: amp && amp.getDeviceId ? amp.getDeviceId() : null,
+        account_group: status.account
+      };
+      console.table(out);
+    } catch (e) { warn('sdkCheck failed', e); }
     return out;
   }
 
