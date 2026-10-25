@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" data-page="platform" data-root="../../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rased | Expenses & Fuel</title>
+<link rel="icon" href="../../assets/img/logo.png">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/site.css">
+<!-- Analytics + Session Replay + Experiment (unified loader) -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.js"></script>
+<!-- Guides & Surveys -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.engagement.js"></script>
+<script src="../../assets/js/analytics.js"></script>
+<script src="../../assets/js/app.js"></script>
+</head>
+<body>
+<main data-module="expenses" data-title="Expense Management">
+  <div class="page-h"><div><h2>Expenses &amp; Fuel</h2><p id="sub"></p></div></div>
+  <div class="card" style="max-width:640px"><h3>Log expense</h3>
+    <div class="field"><span class="lbl">Fuel type</span><div class="chips" id="ft">
+      <button type="button" class="chip on" data-v="91">91</button><button type="button" class="chip" data-v="95">95</button><button type="button" class="chip" data-v="diesel">Diesel</button></div></div>
+    <div class="field"><label for="amt">Amount (SAR)</label><input class="input" type="number" id="amt" min="1" value="240"></div>
+    <button class="btn sm" type="button" id="log">Log expense</button>
+    <p class="note" id="ok" hidden></p>
+  </div>
+</main>
+<script>
+(function () {
+  var p = Rased.persona(); if (!p) return;
+  document.getElementById('sub').textContent = p.account + ' · Expense Management';
+  RasedAnalytics.track('Module Opened', { module: 'expenses_fuel' });
+  var ft = '91';
+  document.querySelectorAll('#ft .chip').forEach(function (c) { c.addEventListener('click', function () {
+    document.querySelectorAll('#ft .chip').forEach(function (x) { x.classList.toggle('on', x === c); }); ft = c.getAttribute('data-v'); }); });
+  document.getElementById('log').addEventListener('click', function () {
+    var amt = Math.max(1, parseFloat(document.getElementById('amt').value) || 1);
+    var ok = document.getElementById('ok'); ok.hidden = false; ok.textContent = 'Logged ' + Rased.sar(amt) + ' (' + ft + ').';
+    RasedAnalytics.track('Fuel Expense Logged', { module: 'expenses_fuel', amount_sar: amt, fuel_type: ft });
+  });
+})();
+</script>
+</body>
+</html>

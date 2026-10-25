@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" data-page="platform" data-root="../../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rased | Rental</title>
+<link rel="icon" href="../../assets/img/logo.png">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/site.css">
+<!-- Analytics + Session Replay + Experiment (unified loader) -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.js"></script>
+<!-- Guides & Surveys -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.engagement.js"></script>
+<script src="../../assets/js/analytics.js"></script>
+<script src="../../assets/js/app.js"></script>
+</head>
+<body>
+<main data-module="rental" data-title="Rental">
+  <div class="page-h"><div><h2>Rental</h2><p id="sub"></p></div></div>
+  <div class="card" style="max-width:640px"><h3>Create contract</h3>
+    <div class="field"><span class="lbl">Contract length</span><div class="chips" id="days">
+      <button type="button" class="chip" data-v="3">3 days</button><button type="button" class="chip on" data-v="7">7 days</button><button type="button" class="chip" data-v="14">14 days</button><button type="button" class="chip" data-v="30">30 days</button></div></div>
+    <div class="field"><label for="nveh">Vehicles rented</label><input class="input" type="number" id="nveh" min="1" max="50" value="2"></div>
+    <button class="btn sm" type="button" id="create">Create contract</button>
+    <p class="note" id="ok" hidden></p>
+  </div>
+</main>
+<script>
+(function () {
+  var p = Rased.persona(); if (!p) return;
+  document.getElementById('sub').textContent = p.account + ' · Rental';
+  RasedAnalytics.track('Module Opened', { module: 'rental' });
+  var days = 7;
+  document.querySelectorAll('#days .chip').forEach(function (c) { c.addEventListener('click', function () {
+    document.querySelectorAll('#days .chip').forEach(function (x) { x.classList.toggle('on', x === c); }); days = +c.getAttribute('data-v'); }); });
+  document.getElementById('create').addEventListener('click', function () {
+    var n = Math.max(1, parseInt(document.getElementById('nveh').value, 10) || 1);
+    var ok = document.getElementById('ok'); ok.hidden = false; ok.textContent = 'Contract created — ' + n + ' vehicle(s) for ' + days + ' days.';
+    RasedAnalytics.track('Rental Contract Created', { module: 'rental', contract_days: days, vehicles_rented: n });
+  });
+})();
+</script>
+</body>
+</html>

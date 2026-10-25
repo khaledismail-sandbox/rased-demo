@@ -1,0 +1,43 @@
+<body>
+<main data-module="dashboard" data-title="Dashboard">
+  <div class="page-h"><div><h2>Fleet Dashboard</h2><p id="sub"></p></div>
+    <a class="btn sm" href="../maintenance/">Maintenance Management</a></div>
+  <div class="kpis">
+    <div class="card kpi"><span class="icon-tile" data-i="truck"></span><div class="v" id="k-fleet"></div><div class="l">Vehicles in fleet</div></div>
+    <div class="card kpi"><span class="icon-tile" data-i="track"></span><div class="v" id="k-moving"></div><div class="l">Moving now</div></div>
+    <div class="card kpi"><span class="icon-tile" data-i="alert"></span><div class="v" id="k-alerts"></div><div class="l">Active alerts</div></div>
+    <div class="card kpi"><span class="icon-tile" data-i="maint"></span><div class="v" id="k-due"></div><div class="l">Due for service</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Live fleet</h3>
+      <div class="map" style="height:330px">
+        <svg viewBox="0 0 600 330" preserveAspectRatio="xMidYMid slice">
+          <rect width="600" height="330" fill="var(--section-bg)"/>
+          <path d="M40 60 L210 20 L330 70 L470 40 L560 120 L540 230 L430 300 L260 310 L120 260 L60 170Z" fill="var(--page-bg)" stroke="var(--muted)" stroke-width="1.5"/>
+          <path d="M90 200 C200 160 260 190 330 140 S480 120 540 170" fill="none" stroke="var(--rule)" stroke-width="3"/>
+          <path d="M200 40 C230 120 260 200 250 300" fill="none" stroke="var(--rule)" stroke-width="3"/>
+          <g fill="var(--brand-navy)"><circle cx="330" cy="140" r="6"/><circle cx="352" cy="150" r="5"/><circle cx="318" cy="160" r="5"/><circle cx="470" cy="120" r="6"/><circle cx="488" cy="132" r="5"/><circle cx="150" cy="210" r="5"/></g>
+          <g fill="var(--accent-blue)"><circle cx="340" cy="128" r="5"/><circle cx="455" cy="140" r="5"/><circle cx="250" cy="250" r="5"/></g>
+          <text x="300" y="185" font-size="13" fill="var(--text)">Riyadh</text><text x="470" y="105" font-size="13" fill="var(--text)">Dammam</text>
+        </svg>
+      </div>
+    </div>
+    <div class="card"><h3>Needs attention</h3><ul class="list" id="attn"></ul></div>
+  </div>
+</main>
+<script>
+(function () {
+  var p = Rased.persona(); if (!p) return;
+  document.querySelectorAll('[data-i]').forEach(function (e) { e.innerHTML = Rased.icon(e.getAttribute('data-i')); });
+  document.getElementById('sub').textContent = p.account + ' · ' + p.region;
+  document.getElementById('k-fleet').textContent = p.fleet;
+  document.getElementById('k-moving').textContent = Math.round(p.fleet * 0.62);
+  document.getElementById('k-alerts').textContent = p.alerts;
+  document.getElementById('k-due').textContent = p.dueService;
+  document.getElementById('attn').innerHTML = p.vehicles.slice(0, 4).map(function (v, i) {
+    return '<li><span class="plate">' + v.plate + '</span><span class="grow">' + v.model + '</span><span class="tag' + (i === 0 ? ' warn' : '') + '">' + (i < 2 ? 'Service due' : 'Idle 3h') + '</span></li>';
+  }).join('');
+  RasedAnalytics.track('Fleet Dashboard Viewed', { module: 'dashboard', vehicles_in_fleet: p.fleet, active_alerts: p.alerts });
+})();
+</script>
+</body>

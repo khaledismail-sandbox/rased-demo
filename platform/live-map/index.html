@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en" data-page="platform" data-root="../../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rased | Live Map</title>
+<link rel="icon" href="../../assets/img/logo.png">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/site.css">
+<!-- Analytics + Session Replay + Experiment (unified loader) -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.js"></script>
+<!-- Guides & Surveys -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.engagement.js"></script>
+<script src="../../assets/js/analytics.js"></script>
+<script src="../../assets/js/app.js"></script>
+</head>
+<body>
+<main data-module="tracking" data-title="Live Tracking">
+  <div class="page-h"><div><h2>Live Map</h2><p id="sub"></p></div></div>
+  <div class="card">
+    <div class="row" style="justify-content:space-between;margin-bottom:14px">
+      <div class="chips" id="filters">
+        <button type="button" class="chip on" data-v="all">All</button><button type="button" class="chip" data-v="moving">Moving</button>
+        <button type="button" class="chip" data-v="idle">Idle</button><button type="button" class="chip" data-v="offline">Offline</button>
+      </div>
+      <form class="row" id="search">
+        <select class="input" id="stype" style="width:auto"><option value="plate">Plate</option><option value="vehicle_id">Vehicle ID</option><option value="driver_group">Driver group</option></select>
+        <input class="input" id="q" placeholder="Search vehicles…" style="width:220px" autocomplete="off">
+        <button class="btn sm" type="submit">Search</button>
+      </form>
+    </div>
+    <p class="note" id="res" style="margin:0 0 10px"></p>
+    <div class="map" style="height:430px"><svg viewBox="0 0 900 430" preserveAspectRatio="xMidYMid slice">
+      <rect width="900" height="430" fill="var(--section-bg)"/>
+      <path d="M60 80 L300 30 L480 90 L690 50 L840 160 L810 300 L640 400 L380 410 L180 340 L90 220Z" fill="var(--page-bg)" stroke="var(--muted)" stroke-width="1.5"/>
+      <path d="M130 260 C300 210 390 250 480 180 S700 160 810 220" fill="none" stroke="var(--rule)" stroke-width="4"/>
+      <path d="M300 50 C340 160 380 260 370 400" fill="none" stroke="var(--rule)" stroke-width="4"/>
+      <g id="dots"></g>
+      <text x="455" y="215" font-size="14" fill="var(--text)">Riyadh</text><text x="700" y="140" font-size="14" fill="var(--text)">Dammam</text><text x="150" y="300" font-size="14" fill="var(--text)">Jeddah</text>
+    </svg></div>
+  </div>
+</main>
+<script>
+(function () {
+  var p = Rased.persona(); if (!p) return;
+  var A = RasedAnalytics;
+  document.getElementById('sub').textContent = p.account + ' · Tracking';
+  var counts = { all: Math.round(p.fleet * 0.9), moving: Math.round(p.fleet * 0.62), idle: Math.round(p.fleet * 0.2), offline: Math.round(p.fleet * 0.08) };
+  var pts = [[480,180],[500,195],[470,200],[700,150],[720,165],[690,170],[200,280],[220,265],[600,250],[380,320],[300,120],[760,240]];
+  function draw(f) {
+    var n = f === 'all' ? 12 : (f === 'moving' ? 8 : (f === 'idle' ? 3 : 1));
+    document.getElementById('dots').innerHTML = pts.slice(0, n).map(function (q, i) {
+      return '<circle cx="' + q[0] + '" cy="' + q[1] + '" r="7" fill="var(--' + (i % 3 ? 'brand-navy' : 'accent-blue') + ')"/>';
+    }).join('');
+    document.getElementById('res').textContent = counts[f] + ' vehicles visible';
+  }
+  draw('all');
+  A.track('Module Opened', { module: 'tracking' });
+  A.track('Live Map Viewed', { module: 'tracking', vehicles_visible: counts.all, map_filter: 'all' });
+  document.querySelectorAll('#filters .chip').forEach(function (c) {
+    c.addEventListener('click', function () {
+      var f = c.getAttribute('data-v');
+      document.querySelectorAll('#filters .chip').forEach(function (x) { x.classList.toggle('on', x === c); });
+      draw(f);
+      A.track('Live Map Viewed', { module: 'tracking', vehicles_visible: counts[f], map_filter: f });
+    });
+  });
+  document.getElementById('search').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var q = document.getElementById('q').value.trim(), t = document.getElementById('stype').value;
+    var n = q ? p.vehicles.filter(function (v) { return (v.plate + ' ' + v.id + ' ' + v.model).toLowerCase().indexOf(q.toLowerCase()) !== -1; }).length : 0;
+    if (t === 'driver_group' && q) n = 12;
+    document.getElementById('res').textContent = n + ' result' + (n === 1 ? '' : 's') + ' for "' + q + '"';
+    A.track('Vehicle Searched', { module: 'tracking', search_type: t, results_count: n });
+  });
+})();
+</script>
+</body>
+</html>

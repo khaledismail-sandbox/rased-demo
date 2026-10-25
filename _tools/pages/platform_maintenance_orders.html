@@ -1,0 +1,34 @@
+<body>
+<main data-module="maintenance" data-title="Maintenance Management">
+  <div class="crumbs"><a href="../">Maintenance Management</a> › Orders</div>
+  <div class="page-h"><div><h2>Maintenance Orders</h2><p id="sub"></p></div><a class="btn sm" href="../book/">Book a workshop</a></div>
+  <div class="success" id="paid" hidden><span class="icon-tile" style="background:var(--page-bg)" data-i="maint"></span><span id="paid-msg"></span></div>
+  <div class="card">
+    <table class="tbl"><thead><tr><th>Order</th><th>Service</th><th>Vehicles</th><th>Workshop</th><th>Date</th><th>Total</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table>
+  </div>
+</main>
+<script>
+(function () {
+  var p = Rased.persona(); if (!p) return;
+  var S = Rased.SERVICES;
+  document.querySelectorAll('[data-i]').forEach(function (e) { e.innerHTML = Rased.icon(e.getAttribute('data-i')); });
+  document.getElementById('sub').textContent = p.account + ' · ' + p.city + ' partner workshops';
+  var hist = [
+    { order_id: '7C41A0E2', service_type: 'periodic_inspection', n: 2, date: '2026-10-12', status: 'Completed' },
+    { order_id: '3B9F51D7', service_type: 'oil_change', n: 4, date: '2026-09-28', status: 'Completed' },
+    { order_id: 'E05D2C88', service_type: 'tyre_replacement', n: 1, date: '2026-09-09', status: 'Completed' }
+  ];
+  var last = Rased.getOwned('rased_last_order');
+  var rows = [];
+  if (last) {
+    rows.push({ order_id: last.order_id, service_type: last.service_type, n: last.vehicle_ids.length, date: last.date, status: 'Paid' });
+    document.getElementById('paid').hidden = false;
+    document.getElementById('paid-msg').textContent = 'Payment received — order ' + last.order_id + ' is confirmed for ' + last.date + ', ' + last.slot + '.';
+  }
+  document.getElementById('rows').innerHTML = rows.concat(hist).map(function (o) {
+    return '<tr><td><b>#' + o.order_id + '</b></td><td>' + S[o.service_type].label + '</td><td>' + o.n + '</td><td>' + p.workshops[0] + '</td><td>' + o.date + '</td><td>' +
+      Rased.sar(S[o.service_type].price * o.n) + '</td><td><span class="tag' + (o.status === 'Paid' ? ' warn' : '') + '">' + o.status + '</span></td></tr>';
+  }).join('');
+})();
+</script>
+</body>

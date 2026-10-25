@@ -1,0 +1,33 @@
+<body>
+<main data-module="maintenance" data-title="Maintenance Management">
+  <div class="crumbs">Maintenance Management</div>
+  <div class="page-h"><div><h2>Maintenance</h2><p id="sub"></p></div>
+    <div class="row"><a class="btn sm ghost" href="orders/">Maintenance orders</a><a class="btn sm" href="book/" id="book-cta">Book a workshop</a></div></div>
+  <div class="kpis">
+    <div class="card kpi"><span class="icon-tile" data-i="maint"></span><div class="v" id="k-due"></div><div class="l">Vehicles due service</div></div>
+    <div class="card kpi"><span class="icon-tile" data-i="ops"></span><div class="v">4</div><div class="l">Open work orders</div></div>
+    <div class="card kpi"><span class="icon-tile" data-i="alert"></span><div class="v" id="k-overdue"></div><div class="l">Overdue</div></div>
+    <div class="card kpi"><span class="icon-tile" data-i="track"></span><div class="v" id="k-feed"></div><div class="l">Odometer feed linked</div></div>
+  </div>
+  <div class="card"><h3>Due for service</h3>
+    <table class="tbl"><thead><tr><th>Plate</th><th>Vehicle</th><th>Next service</th><th>Odometer</th><th></th></tr></thead><tbody id="due"></tbody></table>
+  </div>
+</main>
+<script>
+(function () {
+  var p = Rased.persona(); if (!p) return;
+  document.querySelectorAll('[data-i]').forEach(function (e) { e.innerHTML = Rased.icon(e.getAttribute('data-i')); });
+  document.getElementById('sub').textContent = p.account + ' · partner workshops in ' + p.city;
+  document.getElementById('k-due').textContent = p.dueService;
+  document.getElementById('k-overdue').textContent = Math.round(p.dueService / 3);
+  document.getElementById('k-feed').textContent = p.odometer ? '97%' : '21%';
+  var svc = ['Oil change', 'Periodic inspection', 'Brake service', 'Tyre replacement', 'AC service', 'Battery replacement'];
+  document.getElementById('due').innerHTML = p.vehicles.map(function (v, i) {
+    return '<tr><td><span class="plate">' + v.plate + '</span></td><td>' + v.model + '</td><td>' + svc[i] + '</td><td>' +
+      (p.odometer ? '<span class="tag">Live odometer</span>' : '<span class="tag dim">No odometer feed</span>') + '</td><td><a href="book/" style="color:var(--mid-blue);font-weight:600">Book</a></td></tr>';
+  }).join('');
+  RasedAnalytics.track('Module Opened', { module: 'maintenance' });
+  RasedAnalytics.track('Maintenance Module Opened', { module: 'maintenance', vehicles_due_service: p.dueService });
+})();
+</script>
+</body>

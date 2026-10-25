@@ -1,0 +1,13 @@
+/* Rased palette — measured by _tools/measure_palette.py from the rased.sa screenshots (exact modal pixels). */
+:root{
+  --brand-navy:#293F90;   /* buttons, headline, nav links */
+  --accent-blue:#48A1DB;  /* eyebrow labels, light illustration panels */
+  --mid-blue:#3B6EB2;     /* illustration shading */
+  --text:#222529;         /* body text */
+  --muted:#A4B8D2;        /* footer headings */
+  --section-bg:#F6F8FB;   /* pale section background */
+  --page-bg:#FFFFFF;      /* page background */
+  --icon-tile:#D4E6F4;    /* feature icon tile */
+  --rule:#E0E0E0;         /* divider lines */
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}

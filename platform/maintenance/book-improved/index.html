@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en" data-page="fix">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rased | Book a Workshop</title>
+<link rel="icon" href="../../../assets/img/logo.png">
+<link rel="stylesheet" href="../../../assets/css/tokens.css">
+<!-- Standalone "after" page: no Amplitude SDK, no shared stylesheet, no events. -->
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--font);color:var(--text);background:var(--section-bg);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3,p{margin:0}
+[hidden]{display:none!important}
+.fx-top{background:var(--page-bg);height:64px;display:flex;align-items:center;gap:18px;padding:0 28px;box-shadow:0 1px 0 var(--rule)}
+.fx-top img{height:32px;width:auto}
+.fx-top .t{font-weight:600;color:var(--brand-navy)}
+.fx-top .sp{flex:1}
+.fx-acct{background:var(--section-bg);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--brand-navy)}
+.fx-wrap{max-width:860px;margin:30px auto 60px;padding:0 20px}
+.fx-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;gap:16px}
+.fx-head h1{font-size:26px;font-weight:600;color:var(--brand-navy)}
+.fx-head p{font-size:14px;opacity:.75}
+.fx-count{background:var(--brand-navy);color:var(--page-bg);border-radius:22px;padding:8px 16px;font-weight:700;font-size:14px;white-space:nowrap}
+.fx-bar{height:6px;border-radius:3px;background:var(--icon-tile);overflow:hidden;margin-bottom:18px}
+.fx-bar i{display:block;height:100%;background:var(--accent-blue);transition:width .2s}
+.fx-steps{display:flex;gap:8px;margin-bottom:16px}
+.fx-steps span{flex:1;text-align:center;font-size:13px;font-weight:600;padding:8px;border-radius:20px;background:var(--page-bg);color:var(--muted)}
+.fx-steps span.on{background:var(--brand-navy);color:var(--page-bg)}
+.fx-steps span.done{background:var(--icon-tile);color:var(--brand-navy)}
+.fx-card{background:var(--page-bg);border-radius:14px;box-shadow:0 4px 18px color-mix(in srgb,var(--brand-navy) 8%,transparent);padding:26px 28px}
+.fx-momentum{color:var(--mid-blue);font-weight:700;font-size:14px;margin-bottom:6px}
+.fx-card h2{font-size:19px;color:var(--brand-navy);margin-bottom:18px}
+.fx-field{margin-bottom:22px}
+.fx-lbl{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--brand-navy);margin-bottom:10px}
+.fx-lbl em{font-style:normal;font-weight:600;color:var(--accent-blue)}
+.fx-chips{display:flex;flex-wrap:wrap;gap:8px}
+.fx-chip{border:1px solid var(--rule);background:var(--page-bg);border-radius:22px;padding:9px 16px;font-size:14px;color:var(--brand-navy)}
+.fx-chip.on{background:var(--brand-navy);border-color:var(--brand-navy);color:var(--page-bg)}
+.fx-chip small{display:block;font-size:11px;opacity:.75}
+.fx-veh{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fx-v{display:flex;align-items:center;gap:10px;border:1px solid var(--rule);border-radius:10px;padding:9px 12px;font-size:13px}
+.fx-v.on{border-color:var(--brand-navy);background:var(--section-bg)}
+.fx-v b{color:var(--brand-navy);letter-spacing:.4px}
+.fx-v input{accent-color:var(--brand-navy);width:16px;height:16px}
+.fx-pre{font-size:11px;font-weight:700;color:var(--accent-blue);text-transform:uppercase;letter-spacing:1px;margin-left:6px}
+.fx-odo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fx-o{border:1px solid var(--rule);border-radius:10px;padding:10px 12px}
+.fx-o .p{font-size:12px;font-weight:700;color:var(--brand-navy)}
+.fx-o .n{font-size:11px;color:var(--text);opacity:.6}
+.fx-o input{width:100%;border:1px solid var(--rule);border-radius:8px;padding:8px 10px;margin-top:6px}
+.fx-o input:focus{outline:2px solid var(--accent-blue);border-color:transparent}
+.fx-link{background:none;border:0;color:var(--mid-blue);font-weight:700;font-size:13px;padding:0}
+.fx-nav{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.fx-btn{background:var(--brand-navy);color:var(--page-bg);border:0;border-radius:10px;padding:12px 28px;font-size:16px}
+.fx-btn:hover{background:var(--mid-blue)}
+.fx-btn[disabled]{opacity:.45;cursor:not-allowed}
+.fx-back{background:none;border:0;color:var(--brand-navy);font-weight:600}
+.fx-done{text-align:center;padding:40px 20px}
+.fx-done .ok{width:64px;height:64px;border-radius:50%;background:var(--icon-tile);color:var(--brand-navy);display:inline-flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;margin-bottom:16px}
+.fx-done h2{margin-bottom:8px}
+.fx-sum{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;text-align:left;max-width:420px;margin:20px auto 0;font-size:14px}
+.fx-sum dt{color:var(--muted)}
+.fx-sum dd{margin:0;font-weight:600}
+@media (max-width:640px){.fx-veh,.fx-odo{grid-template-columns:1fr}.fx-head{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<header class="fx-top"><img src="../../../assets/img/logo.png" alt="Rased"><span class="t">Maintenance Management</span><span class="sp"></span><span class="fx-acct" id="acct"></span></header>
+<div class="fx-wrap">
+  <div class="fx-head"><div><h1>Book a Workshop</h1><p id="sub"></p></div><span class="fx-count" id="count"></span></div>
+  <div class="fx-bar"><i id="bar"></i></div>
+  <div class="fx-steps"><span id="t1">1 · Vehicles &amp; service</span><span id="t2">2 · Where &amp; when</span><span id="t3">3 · Slot &amp; odometer</span></div>
+
+  <div class="fx-card" id="card">
+    <div id="s1">
+      <p class="fx-momentum" id="m1"></p><h2>Which vehicles, and what service?</h2>
+      <div class="fx-field"><div class="fx-lbl">Vehicles <em>Preselected from your due-for-service list</em></div><div class="fx-veh" id="veh"></div></div>
+      <div class="fx-field"><div class="fx-lbl">Service type</div><div class="fx-chips" id="svc"></div></div>
+    </div>
+    <div id="s2" hidden>
+      <p class="fx-momentum" id="m2"></p><h2>Where and when?</h2>
+      <div class="fx-field"><div class="fx-lbl">Workshop city <em>From your account</em></div><div class="fx-chips" id="city"></div></div>
+      <div class="fx-field"><div class="fx-lbl">Preferred date <em>Earliest available preselected</em></div><div class="fx-chips" id="date"></div></div>
+    </div>
+    <div id="s3" hidden>
+      <p class="fx-momentum">Last step</p><h2>Pick a slot and confirm odometer</h2>
+      <div class="fx-field"><div class="fx-lbl">Time slot</div><div class="fx-chips" id="slot"></div></div>
+      <div class="fx-field"><div class="fx-lbl">Odometer reading <em>No telematics feed — enter current odometer</em></div>
+        <div class="fx-odo" id="odo"></div>
+        <p style="margin-top:10px"><button type="button" class="fx-link" id="fill">Use last recorded readings</button></p>
+      </div>
+    </div>
+    <div class="fx-nav"><button type="button" class="fx-back" id="back" hidden>← Back</button><span></span><button type="button" class="fx-btn" id="next">Continue</button></div>
+  </div>
+
+  <div class="fx-card fx-done" id="done" hidden>
+    <div class="ok">✓</div><h2>Booking confirmed</h2><p id="done-msg"></p>
+    <dl class="fx-sum" id="sum"></dl>
+  </div>
+</div>
+<script>
+(function () {
+  'use strict';
+  // In-memory fallback persona (Ramla Contracting). Never written to localStorage.
+  var P = {
+    account: 'Ramla Contracting', city: 'Dammam',
+    vehicles: [
+      { id: 'RC-118', plate: '4821 ABD', model: 'Mercedes Actros tipper', last: 184220 },
+      { id: 'RC-126', plate: '7350 BKR', model: 'Volvo FMX tipper', last: 152870 },
+      { id: 'RC-131', plate: '2964 DHN', model: 'Isuzu NPR crew truck', last: 98410 },
+      { id: 'RC-144', plate: '5108 HRS', model: 'Toyota Hilux pickup', last: 121655 },
+      { id: 'RC-152', plate: '8817 KSD', model: 'Hino 500 water tanker', last: 203390 },
+      { id: 'RC-167', plate: '3472 LMR', model: 'Toyota Hilux pickup', last: 76940 }
+    ]
+  };
+  var SERVICES = [['oil_change', 'Oil change', 450], ['tyre_replacement', 'Tyre replacement', 2400], ['brake_service', 'Brake service', 1350],
+    ['periodic_inspection', 'Periodic inspection', 650], ['battery_replacement', 'Battery replacement', 950], ['ac_service', 'AC service', 780]];
+  var CITIES = ['Dammam', 'Riyadh', 'Jeddah'];
+  var SLOTS = ['08:00 – 10:00', '10:00 – 12:00', '13:00 – 15:00', '15:00 – 17:00'];
+  var dates = [];
+  for (var i = 1; i <= 4; i++) { var d = new Date(); d.setDate(d.getDate() + i); dates.push(d); }
+  function fmt(d) { return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); }
+
+  // 6 fields, 3 steps of 2. Known fields are prefilled.
+  var st = { vehicles: P.vehicles.map(function (v) { return v.id; }), service: null, city: P.city, date: 0, slot: null, odo: {} };
+  var step = 1;
+  var $ = function (id) { return document.getElementById(id); };
+  $('acct').textContent = P.account;
+  $('sub').textContent = P.account + ' · partner workshops in ' + P.city;
+
+  function chips(el, items, isOn, onPick) {
+    el.innerHTML = items.map(function (it, i) { return '<button type="button" class="fx-chip' + (isOn(it, i) ? ' on' : '') + '" data-i="' + i + '">' + it.html + '</button>'; }).join('');
+    el.querySelectorAll('.fx-chip').forEach(function (b) { b.addEventListener('click', function () { onPick(items[+b.getAttribute('data-i')], +b.getAttribute('data-i')); render(); }); });
+  }
+  function odoDone() { return st.vehicles.length > 0 && st.vehicles.every(function (id) { return +st.odo[id] > 0; }); }
+  function filled() {
+    return [st.vehicles.length > 0, !!st.service, !!st.city, st.date !== null, !!st.slot, odoDone()];
+  }
+  function stepOk(s) { var f = filled(); return f[(s - 1) * 2] && f[(s - 1) * 2 + 1]; }
+
+  function render() {
+    var f = filled(), left = f.filter(function (x) { return !x; }).length;
+    $('count').textContent = left === 0 ? 'All set' : left + (left === 1 ? ' item to go' : ' items to go');
+    $('bar').style.width = Math.round((6 - left) / 6 * 100) + '%';
+    $('m1').textContent = left <= 1 ? 'Almost there' : 'Just ' + left + ' items to go';
+    $('m2').textContent = 'Nice — ' + left + (left === 1 ? ' item' : ' items') + ' to go';
+    [1, 2, 3].forEach(function (s) {
+      $('s' + s).hidden = s !== step;
+      $('t' + s).className = s === step ? 'on' : (s < step ? 'done' : '');
+    });
+    $('back').hidden = step === 1;
+    $('next').textContent = step === 3 ? 'Confirm booking' : 'Continue';
+    $('next').disabled = !stepOk(step);
+
+    $('veh').innerHTML = P.vehicles.map(function (v) {
+      var on = st.vehicles.indexOf(v.id) !== -1;
+      return '<label class="fx-v' + (on ? ' on' : '') + '"><input type="checkbox" value="' + v.id + '"' + (on ? ' checked' : '') + '><span><b>' + v.plate + '</b> · ' + v.model + '</span></label>';
+    }).join('');
+    $('veh').querySelectorAll('input').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        st.vehicles = P.vehicles.map(function (v) { return v.id; }).filter(function (id) { return id === cb.value ? cb.checked : st.vehicles.indexOf(id) !== -1; });
+        render();
+      });
+    });
+    chips($('svc'), SERVICES.map(function (s) { return { v: s[0], html: s[1] + '<small>SAR ' + s[2].toLocaleString('en-US') + ' / vehicle</small>' }; }),
+      function (it) { return it.v === st.service; }, function (it) { st.service = it.v; });
+    chips($('city'), CITIES.map(function (c) { return { v: c, html: c + (c === P.city ? '<span class="fx-pre">Prefilled</span>' : '') }; }),
+      function (it) { return it.v === st.city; }, function (it) { st.city = it.v; });
+    chips($('date'), dates.map(function (d, i) { return { v: i, html: fmt(d) + (i === 0 ? '<span class="fx-pre">Earliest</span>' : '') }; }),
+      function (it) { return it.v === st.date; }, function (it) { st.date = it.v; });
+    chips($('slot'), SLOTS.map(function (s) { return { v: s, html: s }; }), function (it) { return it.v === st.slot; }, function (it) { st.slot = it.v; });
+
+    if (step === 3) {
+      var focused = document.activeElement && document.activeElement.getAttribute('data-id');
+      $('odo').innerHTML = P.vehicles.filter(function (v) { return st.vehicles.indexOf(v.id) !== -1; }).map(function (v) {
+        return '<div class="fx-o"><div class="p">' + v.plate + '</div><div class="n">Enter current odometer · last recorded ' + v.last.toLocaleString('en-US') + ' km</div>' +
+          '<input inputmode="numeric" data-id="' + v.id + '" placeholder="km" value="' + (st.odo[v.id] || '') + '"></div>';
+      }).join('');
+      $('odo').querySelectorAll('input').forEach(function (inp) {
+        inp.addEventListener('input', function () {
+          st.odo[inp.getAttribute('data-id')] = inp.value.replace(/[^0-9]/g, '');
+          var left2 = filled().filter(function (x) { return !x; }).length;
+          $('count').textContent = left2 === 0 ? 'All set' : left2 + (left2 === 1 ? ' item to go' : ' items to go');
+          $('bar').style.width = Math.round((6 - left2) / 6 * 100) + '%';
+          $('next').disabled = !stepOk(3);
+        });
+      });
+      if (focused) { var el = $('odo').querySelector('[data-id="' + focused + '"]'); if (el) el.focus(); }
+    }
+  }
+
+  $('fill').addEventListener('click', function () {
+    P.vehicles.forEach(function (v) { if (st.vehicles.indexOf(v.id) !== -1) st.odo[v.id] = String(v.last + 1200); });
+    render();
+  });
+  $('back').addEventListener('click', function () { step = Math.max(1, step - 1); render(); });
+  $('next').addEventListener('click', function () {
+    if (!stepOk(step)) return;
+    if (step < 3) { step++; render(); return; }
+    var svc = SERVICES.filter(function (s) { return s[0] === st.service; })[0], n = st.vehicles.length;
+    $('card').hidden = true; $('done').hidden = false;
+    $('count').textContent = 'Done'; $('bar').style.width = '100%';
+    ['t1', 't2', 't3'].forEach(function (t) { $(t).className = 'done'; });
+    $('done-msg').textContent = n + ' vehicle' + (n === 1 ? '' : 's') + ' booked — odometer readings captured, no telematics feed needed.';
+    $('sum').innerHTML = '<dt>Service</dt><dd>' + svc[1] + '</dd><dt>Workshop</dt><dd>' + st.city + '</dd><dt>Date</dt><dd>' + fmt(dates[st.date]) + '</dd>' +
+      '<dt>Time slot</dt><dd>' + st.slot + '</dd><dt>Estimated cost</dt><dd>SAR ' + (svc[2] * n).toLocaleString('en-US') + '</dd>';
+  });
+  render();
+})();
+</script>
+</body>
+</html>

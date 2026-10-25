@@ -1,0 +1,27 @@
+<body>
+<main data-module="expenses" data-title="Expense Management">
+  <div class="page-h"><div><h2>Expenses &amp; Fuel</h2><p id="sub"></p></div></div>
+  <div class="card" style="max-width:640px"><h3>Log expense</h3>
+    <div class="field"><span class="lbl">Fuel type</span><div class="chips" id="ft">
+      <button type="button" class="chip on" data-v="91">91</button><button type="button" class="chip" data-v="95">95</button><button type="button" class="chip" data-v="diesel">Diesel</button></div></div>
+    <div class="field"><label for="amt">Amount (SAR)</label><input class="input" type="number" id="amt" min="1" value="240"></div>
+    <button class="btn sm" type="button" id="log">Log expense</button>
+    <p class="note" id="ok" hidden></p>
+  </div>
+</main>
+<script>
+(function () {
+  var p = Rased.persona(); if (!p) return;
+  document.getElementById('sub').textContent = p.account + ' · Expense Management';
+  RasedAnalytics.track('Module Opened', { module: 'expenses_fuel' });
+  var ft = '91';
+  document.querySelectorAll('#ft .chip').forEach(function (c) { c.addEventListener('click', function () {
+    document.querySelectorAll('#ft .chip').forEach(function (x) { x.classList.toggle('on', x === c); }); ft = c.getAttribute('data-v'); }); });
+  document.getElementById('log').addEventListener('click', function () {
+    var amt = Math.max(1, parseFloat(document.getElementById('amt').value) || 1);
+    var ok = document.getElementById('ok'); ok.hidden = false; ok.textContent = 'Logged ' + Rased.sar(amt) + ' (' + ft + ').';
+    RasedAnalytics.track('Fuel Expense Logged', { module: 'expenses_fuel', amount_sar: amt, fuel_type: ft });
+  });
+})();
+</script>
+</body>

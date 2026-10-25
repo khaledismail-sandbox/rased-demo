@@ -1,0 +1,28 @@
+<body>
+<main data-module="alerts" data-title="Alerts">
+  <div class="page-h"><div><h2>Alerts</h2><p id="sub"></p></div></div>
+  <div class="grid2">
+    <div class="card"><h3>Active alerts</h3><ul class="list" id="alerts"></ul></div>
+    <div class="card" id="detail"><h3>Alert detail</h3><p class="note" id="d-text">Select an alert to see its details.</p></div>
+  </div>
+</main>
+<script>
+(function () {
+  var p = Rased.persona(); if (!p) return;
+  document.getElementById('sub').textContent = p.account + ' · ' + p.alerts + ' active';
+  var types = { speeding: 'Speeding', geofence: 'Geofence exit', idle: 'Excessive idling', maintenance_due: 'Maintenance due' };
+  var rows = [['speeding', 0, '132 km/h on King Fahd Rd'], ['geofence', 1, 'Left ' + p.city + ' depot zone'], ['idle', 2, 'Idle 47 min, engine on'], ['maintenance_due', 3, 'Periodic inspection overdue'], ['speeding', 4, '118 km/h in 100 zone']];
+  document.getElementById('alerts').innerHTML = rows.map(function (r, i) {
+    var v = p.vehicles[r[1]];
+    return '<li class="alert-row" data-i="' + i + '"><span class="tag' + (r[0] === 'speeding' ? ' warn' : '') + '">' + types[r[0]] + '</span><span class="plate">' + v.plate + '</span><span class="grow">' + r[2] + '</span><span class="note" style="margin:0">' + (i * 7 + 4) + ' min ago</span></li>';
+  }).join('');
+  document.querySelectorAll('.alert-row').forEach(function (li) {
+    li.addEventListener('click', function () {
+      var r = rows[+li.getAttribute('data-i')], v = p.vehicles[r[1]];
+      document.getElementById('d-text').textContent = types[r[0]] + ' — ' + v.plate + ' (' + v.model + '): ' + r[2] + '.';
+      RasedAnalytics.track('Alert Opened', { module: 'tracking', alert_type: r[0] });
+    });
+  });
+})();
+</script>
+</body>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" data-page="platform" data-root="../../../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rased | Booking Confirmation</title>
+<link rel="icon" href="../../../assets/img/logo.png">
+<link rel="stylesheet" href="../../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../../assets/css/site.css">
+<!-- Analytics + Session Replay + Experiment (unified loader) -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.js"></script>
+<!-- Guides & Surveys -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.engagement.js"></script>
+<script src="../../../assets/js/analytics.js"></script>
+<script src="../../../assets/js/app.js"></script>
+</head>
+<body>
+<main data-module="maintenance" data-title="Maintenance Management">
+  <div class="crumbs"><a href="../">Maintenance Management</a> › Booking confirmation</div>
+  <div class="page-h"><div><h2>Booking Confirmation</h2><p id="sub"></p></div></div>
+  <div id="empty" class="card" hidden><h3>No pending booking</h3><p>There is no booking waiting for payment on this account.</p><p style="margin-top:16px"><a class="btn sm" href="../book/">Book a workshop</a></p></div>
+  <div class="grid2" id="body" hidden>
+    <div class="card">
+      <div class="success"><span class="icon-tile" style="background:var(--page-bg)" data-i="maint"></span><span>Workshop slot reserved — complete payment to confirm the order.</span></div>
+      <h3>Booked vehicles</h3>
+      <ul class="list" id="veh"></ul>
+      <h3 style="margin-top:22px">Payment method</h3>
+      <div class="chips" id="pay">
+        <button type="button" class="chip" data-v="wallet">Rased wallet</button>
+        <button type="button" class="chip" data-v="bank_transfer">Bank transfer</button>
+        <button type="button" class="chip" data-v="card">Card</button>
+      </div>
+      <p style="margin-top:22px"><button type="button" class="btn sm" id="paybtn" disabled>Pay</button></p>
+    </div>
+    <div class="card summary"><h3>Order summary</h3>
+      <dl><dt>Service</dt><dd id="s-svc"></dd><dt>Workshop city</dt><dd id="s-city"></dd><dt>Date</dt><dd id="s-date"></dd><dt>Time slot</dt><dd id="s-slot"></dd><dt>Vehicles</dt><dd id="s-n"></dd><dt>Price / vehicle</dt><dd id="s-price"></dd></dl>
+      <div class="total"><span>Total</span><span id="s-total"></span></div>
+    </div>
+  </div>
+</main>
+<script>
+(function () {
+  var p = Rased.persona(); if (!p) return;
+  var d = Rased.getOwned('rased_draft');
+  document.getElementById('sub').textContent = p.account;
+  if (!d || d.status !== 'submitted') { document.getElementById('empty').hidden = false; return; }
+  document.getElementById('body').hidden = false;
+  document.querySelectorAll('[data-i]').forEach(function (e) { e.innerHTML = Rased.icon(e.getAttribute('data-i')); });
+  var svc = Rased.SERVICES[d.service_type];
+  // Vehicles are rebuilt from the active persona only.
+  var veh = p.vehicles.filter(function (v) { return d.vehicle_ids.indexOf(v.id) !== -1; });
+  var qty = veh.length, price = svc.price;
+  document.getElementById('veh').innerHTML = veh.map(function (v) { return '<li><span class="plate">' + v.plate + '</span><span class="grow">' + v.model + '</span><span class="tag">Live odometer</span></li>'; }).join('');
+  document.getElementById('s-svc').textContent = svc.label;
+  document.getElementById('s-city').textContent = p.city;
+  document.getElementById('s-date').textContent = d.date;
+  document.getElementById('s-slot').textContent = d.slot;
+  document.getElementById('s-n').textContent = qty;
+  document.getElementById('s-price').textContent = Rased.sar(price);
+  document.getElementById('s-total').textContent = Rased.sar(price * qty);
+  var method = null, btn = document.getElementById('paybtn');
+  document.querySelectorAll('#pay .chip').forEach(function (c) {
+    c.addEventListener('click', function () {
+      document.querySelectorAll('#pay .chip').forEach(function (x) { x.classList.toggle('on', x === c); });
+      method = c.getAttribute('data-v'); btn.disabled = false;
+    });
+  });
+  btn.addEventListener('click', function () {
+    if (!method) return;
+    btn.disabled = true;
+    var order_id = Rased.hex8();
+    Rased.setOwned('rased_last_order', { order_id: order_id, service_type: d.service_type, vehicle_ids: d.vehicle_ids, date: d.date, slot: d.slot, total: price * qty, payment_method: method });
+    Rased.clear('rased_draft');
+    RasedAnalytics.trackThenGo('Maintenance Order Paid',
+      { order_id: order_id, service_type: d.service_type, vehicles_serviced: qty, payment_method: method },
+      '../orders/',
+      { revenue: price * qty, price: price, quantity: qty, revenueType: 'maintenance_order' });
+  });
+})();
+</script>
+</body>
+</html>

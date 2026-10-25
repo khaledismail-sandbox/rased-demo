@@ -1,0 +1,27 @@
+<body>
+<main data-module="operations" data-title="Operations Management">
+  <div class="page-h"><div><h2>Operations</h2><p id="sub"></p></div></div>
+  <div class="card" style="max-width:640px"><h3>Create work order</h3>
+    <div class="field"><span class="lbl">Priority</span><div class="chips" id="prio">
+      <button type="button" class="chip" data-v="low">Low</button><button type="button" class="chip on" data-v="medium">Medium</button><button type="button" class="chip" data-v="high">High</button></div></div>
+    <div class="field"><label for="nveh">Vehicles assigned</label><input class="input" type="number" id="nveh" min="1" max="50" value="3"></div>
+    <button class="btn sm" type="button" id="create">Create work order</button>
+    <p class="note" id="ok" hidden></p>
+  </div>
+</main>
+<script>
+(function () {
+  var p = Rased.persona(); if (!p) return;
+  document.getElementById('sub').textContent = p.account + ' · Operations Management';
+  RasedAnalytics.track('Module Opened', { module: 'operations' });
+  var prio = 'medium';
+  document.querySelectorAll('#prio .chip').forEach(function (c) { c.addEventListener('click', function () {
+    document.querySelectorAll('#prio .chip').forEach(function (x) { x.classList.toggle('on', x === c); }); prio = c.getAttribute('data-v'); }); });
+  document.getElementById('create').addEventListener('click', function () {
+    var n = Math.max(1, parseInt(document.getElementById('nveh').value, 10) || 1);
+    var ok = document.getElementById('ok'); ok.hidden = false; ok.textContent = 'Work order created — ' + n + ' vehicle(s), ' + prio + ' priority.';
+    RasedAnalytics.track('Work Order Created', { module: 'operations', priority: prio, vehicles_assigned: n });
+  });
+})();
+</script>
+</body>

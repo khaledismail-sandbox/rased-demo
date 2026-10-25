@@ -1,0 +1,133 @@
+<body>
+<main data-module="maintenance" data-title="Maintenance Management">
+  <div class="crumbs"><a href="../">Maintenance Management</a> › Book a workshop</div>
+  <div class="page-h"><div><h2>Book a Workshop</h2><p id="sub"></p></div></div>
+  <div class="steps"><span class="on" id="st1">1 · Vehicles &amp; service</span><span id="st2">2 · Workshop details</span></div>
+  <div class="grid2">
+    <form class="card" id="book-form" novalidate>
+      <h3>Vehicles &amp; service</h3>
+      <div class="field"><span class="lbl">Vehicles</span>
+        <div class="vlist" id="vlist"></div>
+      </div>
+      <div class="field"><label for="svc">Service type</label>
+        <select class="input" id="svc"><option value="">Select a service…</option></select>
+      </div>
+      <p class="note" id="n1" hidden>Select at least one vehicle and a service type.</p>
+      <button type="button" class="btn sm" id="start">Start request</button>
+
+      <div id="part2" hidden>
+        <h3 style="margin-top:26px">Workshop details</h3>
+        <div class="fgrid2">
+          <div class="field"><label for="city">Workshop city</label>
+            <select class="input" id="city"><option value="">Select a city…</option><option>Riyadh</option><option>Jeddah</option><option>Dammam</option><option>Makkah</option><option>Madinah</option></select></div>
+          <div class="field"><label for="date">Preferred date</label><input class="input" type="date" id="date"></div>
+          <div class="field"><label for="slot">Time slot</label>
+            <select class="input" id="slot"><option value="">Select a slot…</option><option>08:00 – 10:00</option><option>10:00 – 12:00</option><option>13:00 – 15:00</option><option>15:00 – 17:00</option></select></div>
+          <div class="field"><label for="odo">Odometer reading</label><input class="input" id="odo" readonly></div>
+        </div>
+        <p class="note" id="n2" hidden>Please complete all workshop details.</p>
+        <button type="submit" class="btn sm" id="submit">Submit booking</button>
+        <div class="banner" id="err" hidden>
+          <span class="ic">!</span>
+          <span class="grow"><b>Booking couldn't be completed</b> — <span id="err-n"></span> vehicles have no odometer feed (ODOMETER_FEED_MISSING)</span>
+          <button type="button" class="btn sm" id="retry">Retry booking</button>
+        </div>
+      </div>
+    </form>
+    <div class="card summary"><h3>Summary</h3>
+      <dl><dt>Account</dt><dd id="s-acct"></dd><dt>Vehicles</dt><dd id="s-veh">—</dd><dt>Service</dt><dd id="s-svc">—</dd><dt>Price / vehicle</dt><dd id="s-price">—</dd></dl>
+      <div class="total"><span>Estimated cost</span><span id="s-total">—</span></div>
+    </div>
+  </div>
+</main>
+<script>
+(function () {
+  var p = Rased.persona(); if (!p) return;
+  var A = RasedAnalytics, S = Rased.SERVICES;
+  Rased.clear('rased_draft');   // every visit starts a fresh request for the active persona
+  document.getElementById('sub').textContent = p.account + ' · partner workshop network';
+  document.getElementById('s-acct').textContent = p.account;
+
+  var feedLabel = p.odometer ? '<span class="tag">Live odometer</span>' : '<span class="tag dim">No odometer feed</span>';
+  document.getElementById('vlist').innerHTML =
+    '<label class="vrow all"><input type="checkbox" id="all"> Select all vehicles</label>' +
+    p.vehicles.map(function (v) {
+      return '<label class="vrow"><input type="checkbox" class="veh" value="' + v.id + '"><span class="plate">' + v.plate + '</span><span class="grow">' + v.model + '</span>' + feedLabel + '</label>';
+    }).join('');
+  var svcSel = document.getElementById('svc');
+  Object.keys(S).forEach(function (k) { svcSel.insertAdjacentHTML('beforeend', '<option value="' + k + '">' + S[k].label + ' — ' + Rased.sar(S[k].price) + ' / vehicle</option>'); });
+
+  var vehBoxes = Array.prototype.slice.call(document.querySelectorAll('.veh'));
+  var allBox = document.getElementById('all');
+  function selected() { return vehBoxes.filter(function (b) { return b.checked; }).map(function (b) { return b.value; }); }
+  function summary() {
+    var n = selected().length, s = S[svcSel.value];
+    document.getElementById('s-veh').textContent = n ? n + ' selected' : '—';
+    document.getElementById('s-svc').textContent = s ? s.label : '—';
+    document.getElementById('s-price').textContent = s ? Rased.sar(s.price) : '—';
+    document.getElementById('s-total').textContent = (s && n) ? Rased.sar(s.price * n) : '—';
+  }
+  allBox.addEventListener('change', function () { vehBoxes.forEach(function (b) { b.checked = allBox.checked; }); summary(); });
+  vehBoxes.forEach(function (b) { b.addEventListener('change', function () { allBox.checked = selected().length === vehBoxes.length; summary(); }); });
+  svcSel.addEventListener('change', summary);
+
+  var started = false, done = false, failed = false, abandonSent = false, req = null;
+
+  document.getElementById('start').addEventListener('click', function () {
+    var ids = selected(), svc = svcSel.value;
+    if (!ids.length || !svc) { document.getElementById('n1').hidden = false; return; }
+    document.getElementById('n1').hidden = true;
+    var n = ids.length;
+    req = { service_type: svc, vehicle_ids: ids, vehicles_selected: n, estimated_cost: S[svc].price * n };
+    Rased.setOwned('rased_draft', { service_type: svc, vehicle_ids: ids, status: 'started' });
+    started = true;
+    vehBoxes.concat([allBox, svcSel]).forEach(function (el) { el.disabled = true; });
+    this.hidden = true;
+    document.getElementById('part2').hidden = false;
+    document.getElementById('st1').classList.remove('on'); document.getElementById('st2').classList.add('on');
+    document.getElementById('odo').value = p.odometer ? 'Auto-filled from telematics feed (' + n + ' of ' + n + ' live)' : 'Auto-filled from telematics feed — 0 of ' + n + ' reporting';
+    A.track('Service Request Started', { service_type: svc, vehicles_selected: n,
+      vehicles_with_odometer_feed: p.odometer ? n : 0, estimated_cost: req.estimated_cost });
+  });
+
+  document.getElementById('book-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!started || failed) return;
+    var city = document.getElementById('city').value, date = document.getElementById('date').value, slot = document.getElementById('slot').value;
+    if (!city || !date || !slot) { document.getElementById('n2').hidden = false; return; }
+    document.getElementById('n2').hidden = true;
+    if (!p.odometer) {
+      failed = true;
+      document.getElementById('submit').hidden = true;
+      document.getElementById('err-n').textContent = req.vehicles_selected;
+      document.getElementById('err').hidden = false;
+      A.track('Workshop Booking Failed', { error_code: 'ODOMETER_FEED_MISSING', module: 'maintenance',
+        screen: '/platform/maintenance/book/', vehicles_affected: req.vehicles_selected, service_type: req.service_type });
+      return;
+    }
+    done = true;
+    Rased.setOwned('rased_draft', { service_type: req.service_type, vehicle_ids: req.vehicle_ids, city: p.city, date: date, slot: slot, status: 'submitted' });
+    A.trackThenGo('Workshop Booking Submitted', { service_type: req.service_type, vehicles_selected: req.vehicles_selected,
+      estimated_cost: req.estimated_cost, partner_workshop_city: p.city }, '../confirm/');
+  });
+  // "Retry booking" is deliberately inert: no handler, no state change, no navigation.
+
+  function abandonProps() {
+    return { abandonment_trigger: failed ? 'booking_error' : 'left_screen', service_type: req.service_type, vehicles_selected: req.vehicles_selected };
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href]');
+    if (!a || !started || done || abandonSent) return;
+    var href = a.getAttribute('href'); if (!href || href.charAt(0) === '#') return;
+    e.preventDefault();
+    abandonSent = true;
+    A.trackThenGo('Service Request Abandoned', abandonProps(), a.href);
+  }, true);
+  A.onHide(function () {
+    if (!started || done || abandonSent) return;
+    abandonSent = true;
+    A.track('Service Request Abandoned', abandonProps());
+  });
+})();
+</script>
+</body>

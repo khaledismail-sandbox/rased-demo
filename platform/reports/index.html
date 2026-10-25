@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" data-page="platform" data-root="../../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rased | Reports</title>
+<link rel="icon" href="../../assets/img/logo.png">
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/site.css">
+<!-- Analytics + Session Replay + Experiment (unified loader) -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.js"></script>
+<!-- Guides & Surveys -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.engagement.js"></script>
+<script src="../../assets/js/analytics.js"></script>
+<script src="../../assets/js/app.js"></script>
+</head>
+<body>
+<main data-module="reports" data-title="Reports">
+  <div class="page-h"><div><h2>Reports</h2><p id="sub"></p></div></div>
+  <div class="card" style="max-width:640px"><h3>Export a report</h3>
+    <div class="field"><label for="rt">Report</label><select class="input" id="rt">
+      <option value="utilisation">Fleet utilisation</option><option value="fuel">Fuel consumption</option><option value="maintenance_cost">Maintenance cost</option><option value="driver_behaviour">Driver behaviour</option></select></div>
+    <div class="field"><span class="lbl">Format</span><div class="chips" id="fmt">
+      <button type="button" class="chip on" data-v="pdf">PDF</button><button type="button" class="chip" data-v="xlsx">Excel (XLSX)</button></div></div>
+    <button class="btn sm" type="button" id="export">Export</button>
+    <p class="note" id="ok" hidden></p>
+  </div>
+</main>
+<script>
+(function () {
+  var p = Rased.persona(); if (!p) return;
+  document.getElementById('sub').textContent = p.account + ' · Reports';
+  var fmt = 'pdf';
+  document.querySelectorAll('#fmt .chip').forEach(function (c) { c.addEventListener('click', function () {
+    document.querySelectorAll('#fmt .chip').forEach(function (x) { x.classList.toggle('on', x === c); }); fmt = c.getAttribute('data-v'); }); });
+  document.getElementById('export').addEventListener('click', function () {
+    var rt = document.getElementById('rt').value;
+    var ok = document.getElementById('ok'); ok.hidden = false; ok.textContent = 'Export queued — you will find it under My Exported Files.';
+    RasedAnalytics.track('Report Exported', { module: 'operations', report_type: rt, format: fmt });
+  });
+})();
+</script>
+</body>
+</html>

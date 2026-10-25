@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" data-page="login" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rased | Sign in</title>
+<link rel="icon" href="../assets/img/logo.png">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/site.css">
+<!-- Analytics + Session Replay + Experiment (unified loader) -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.js"></script>
+<!-- Guides & Surveys -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.engagement.js"></script>
+<script src="../assets/js/analytics.js"></script>
+<script src="../assets/js/app.js"></script>
+</head>
+<body>
+<div class="login-page">
+  <div class="login-top"><span class="lang-toggle">EN <i></i></span></div>
+  <form class="login-card" id="login-form" novalidate>
+    <div class="logo"><img src="../assets/img/logo.png" alt="Rased"></div>
+    <div class="field"><label for="uid">User ID</label><input class="input" id="uid" autocomplete="off" spellcheck="false"></div>
+    <p class="err" id="err" hidden>Unknown user</p>
+    <button class="btn" type="submit">Sign in</button>
+  </form>
+  <footer class="login-foot">
+    <div>Provided by Elm · Rased Fleet Management</div>
+    <div id="toggle-slot" style="display:flex;justify-content:center;margin-top:10px"></div>
+  </footer>
+</div>
+<script>
+(function () {
+  var input = document.getElementById('uid');
+  input.value = Rased.choice();
+  var slot = document.getElementById('toggle-slot');
+  slot.innerHTML = Rased.toggleHtml();
+  Rased.bindToggle(slot);
+  document.getElementById('login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var uid = input.value.trim();
+    if (!RasedAnalytics.PERSONAS[uid]) { document.getElementById('err').hidden = false; return; }
+    RasedAnalytics.signIn(uid, '../platform/dashboard/');
+  });
+})();
+</script>
+</body>
+</html>

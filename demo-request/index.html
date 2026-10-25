@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" data-page="marketing" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rased | Request a Demo</title>
+<link rel="icon" href="../assets/img/logo.png">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/site.css">
+<!-- Analytics + Session Replay + Experiment (unified loader) -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.js"></script>
+<!-- Guides & Surveys -->
+<script src="https://cdn.amplitude.com/script/ad85aaa13604f0cb6816af5141d8b190.engagement.js"></script>
+<script src="../assets/js/analytics.js"></script>
+<script src="../assets/js/marketing.js"></script>
+</head>
+<body>
+<div id="mk-header"></div>
+
+<section class="form-page">
+  <div class="wrap">
+    <div class="eyebrow">Contact Us</div>
+    <h1>Request a Demo</h1>
+    <p class="lede">Tell us about your fleet and a Rased specialist will walk you through live tracking, maintenance and expense management.</p>
+    <form class="form-card" id="demo-form" novalidate>
+      <div class="field"><label for="f-name">Full name</label><input class="input" id="f-name" autocomplete="off" placeholder="e.g. Faisal Al-Harbi"></div>
+      <div class="field"><label for="f-email">Work email</label><input class="input" id="f-email" type="email" autocomplete="off" placeholder="name@company.sa"></div>
+      <div class="field"><label for="f-company">Company</label><input class="input" id="f-company" autocomplete="off" placeholder="Company name"></div>
+      <div class="field"><span class="lbl">Fleet size</span>
+        <div class="chips" id="fleet-chips">
+          <button type="button" class="chip" data-v="10-50">10–50 vehicles</button>
+          <button type="button" class="chip" data-v="51-200">51–200 vehicles</button>
+          <button type="button" class="chip" data-v="201-500">201–500 vehicles</button>
+          <button type="button" class="chip" data-v="500+">500+ vehicles</button>
+        </div>
+        <p class="note" id="chip-note" hidden>Please choose your fleet size.</p>
+      </div>
+      <button class="btn" type="submit">Submit</button>
+    </form>
+  </div>
+</section>
+
+<div id="mk-footer"></div>
+<script>
+(function () {
+  RasedAnalytics.track('Marketing Page Viewed', { page_section: 'demo-request' });
+  var band = null, started = false;
+  document.querySelectorAll('#fleet-chips .chip').forEach(function (c) {
+    c.addEventListener('click', function () {
+      document.querySelectorAll('#fleet-chips .chip').forEach(function (x) { x.classList.toggle('on', x === c); });
+      band = c.getAttribute('data-v');
+      document.getElementById('chip-note').hidden = true;
+      if (!started) { started = true; RasedAnalytics.track('Demo Request Started', { fleet_size_band: band }); }
+    });
+  });
+  // Only fleet_size_band is ever sent — name, email and company never leave the browser.
+  document.getElementById('demo-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!band) { document.getElementById('chip-note').hidden = false; return; }
+    RasedAnalytics.trackThenGo('Demo Request Submitted', { fleet_size_band: band }, 'thank-you/');
+  });
+})();
+</script>
+</body>
+</html>
