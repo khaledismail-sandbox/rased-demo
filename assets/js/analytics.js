@@ -133,7 +133,7 @@
   // ---- identity ----
   function personaIdentity() {
     try {
-    var id = new amp.Identify(), k;
+    var id = new window.amplitude.Identify(), k;
     for (k in P.set) id.set(k, P.set[k]);
     for (k in P.setOnce) id.setOnce(k, P.setOnce[k]);
     var opts = { country: COUNTRY, region: P.region, city: P.city };
@@ -141,7 +141,7 @@
     amp.identify(id, opts);
     amp.setGroup('account', P.account.slug, opts);
     rec('identify', '$setGroup', { account: P.account.slug }, opts);
-    var g = new amp.Identify();
+    var g = new window.amplitude.Identify();
     for (k in P.account.props) g.set(k, P.account.props[k]);
     rec('identify', '$groupidentify', { group_type: 'account', group_name: P.account.slug, $set: P.account.props }, opts);
     amp.groupIdentify('account', P.account.slug, g, opts);
@@ -170,7 +170,7 @@
     };
     var once = { initial_utm_source: set.utm_source, initial_utm_medium: set.utm_medium, initial_utm_campaign: set.utm_campaign,
       initial_referrer: ref, initial_referring_domain: refDomain };
-    var id = new amp.Identify(), k;
+    var id = new window.amplitude.Identify(), k;
     for (k in set) id.set(k, set[k]);
     for (k in once) id.setOnce(k, once[k]);
     var opts = { country: COUNTRY };
@@ -209,7 +209,9 @@
   // optOut is ALWAYS passed explicitly: the SDK otherwise inherits the opt-out saved in its cookie by the login page.
   function init(uid, optOut) {
     function doInit() {
-      amp = window.amplitude;
+      // Anonymous pages use their own named instance with localStorage identity: the default instance shares the
+      // identity cookie, which carries the last persona's user ID and would merge anonymous traffic into that persona.
+      amp = uid === '' ? window.amplitude.createInstance('rased-marketing') : window.amplitude;
       if (window.sessionReplay) {
         amp.add(window.sessionReplay.plugin({ sampleRate: 1, privacyConfig: { defaultMaskLevel: MASK_LEVEL } }));
         status.srAdded = true;
@@ -229,7 +231,7 @@
           fileDownloads: false, elementInteractions: false, frustrationInteractions: true }
       };
       if (uid) opts.deviceId = deviceIdFor(uid);
-      else if (uid === '') opts.deviceId = deviceIdFor('anonymous');
+      else if (uid === '') { opts.deviceId = deviceIdFor('marketing'); opts.identityStorage = 'localStorage'; }
       var r = amp.init(KEY, uid || undefined, opts);
       // On the loader stub, init's promise resolves with the real SDK's {promise} when the call is replayed — wait for that too.
       var p = (r && r.promise) ? r.promise : Promise.resolve();
@@ -271,7 +273,10 @@
       // Anonymous: own device ID, and drop any user ID the SDK cookie kept from an earlier persona.
       init('', false).then(function (ok) {
         if (!ok) return;
-        try { if (amp.getUserId()) { amp.setUserId(undefined); amp.setSessionId(Date.now()); } } catch (e) { warn('anonymous reset failed', e); }
+        try {
+          if (amp.getUserId()) { warn('anonymous page still had a user ID after init — clearing it'); amp.setUserId(undefined); amp.setSessionId(Date.now()); }
+          if (amp.getDeviceId() !== deviceIdFor('marketing')) amp.setDeviceId(deviceIdFor('marketing'));
+        } catch (e) { warn('anonymous reset failed', e); }
         anonymousIdentity(); flush();
       });
     }
