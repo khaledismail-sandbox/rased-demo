@@ -229,6 +229,7 @@
           fileDownloads: false, elementInteractions: false, frustrationInteractions: true }
       };
       if (uid) opts.deviceId = deviceIdFor(uid);
+      else if (uid === '') opts.deviceId = deviceIdFor('anonymous');
       var r = amp.init(KEY, uid || undefined, opts);
       // On the loader stub, init's promise resolves with the real SDK's {promise} when the call is replayed — wait for that too.
       var p = (r && r.promise) ? r.promise : Promise.resolve();
@@ -267,7 +268,12 @@
     } else if (PAGE === 'marketing') {
       active = true;
       pageViewed();
-      init(null, false).then(function (ok) { if (ok) { anonymousIdentity(); flush(); } });
+      // Anonymous: own device ID, and drop any user ID the SDK cookie kept from an earlier persona.
+      init('', false).then(function (ok) {
+        if (!ok) return;
+        try { if (amp.getUserId()) { amp.setUserId(undefined); amp.setSessionId(Date.now()); } } catch (e) { warn('anonymous reset failed', e); }
+        anonymousIdentity(); flush();
+      });
     }
   } catch (e) { warn('startup failed', e); readyResolve(false); }
 
